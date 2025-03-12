@@ -1,36 +1,386 @@
 <!DOCTYPE html>
-<html>
-  <head>
-    <title> Chat</title>
-  </head>
-  <body>
-    <ul id="messages"></ul>
-    <form id="form" action="">
-      <input id="input" autocomplete="off" /><button>Send</button>
-    </form>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>socket.io chat</title>
+    <style>
+        /* ... (Previous CSS, plus additions below) ... */
+        .group-list {
+            list-style: none;
+            padding: 0;
+            margin: 0 0 10px 0;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .group-item {
+            padding: 8px 12px;
+            background-color: #f8f8f8;
+            margin-bottom: 5px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+      .group-item:hover, .group-item.active{
+        background-color: #e0e0e0;
+      }
+
+      #local-video, #remote-video {
+        width: 100%;
+        max-width: 300px; /* Or whatever size you want */
+        height: auto;
+        background-color: black;
+        border-radius: 8px;
+        margin: 5px;
+      }
+      #videos-container {
+        display: flex; /* Arrange videos side by side */
+        flex-wrap: wrap; /* Allow wrapping on smaller screens */
+        justify-content: center;
+        margin-bottom: 1rem;
+      }
+      .call-controls {
+        margin-top: 10px;
+        text-align: center;
+      }
+        #call-button, #hangup-button{
+          padding: 10px;
+          margin: 0 5px;
+          background-color: blue;
+          color: white;
+          border-radius: 5px;
+          cursor: pointer;
+          border: none;
+        }
+        #hangup-button{
+          background-color: red;
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <div class="chat-header">
+            obrolan langsung
+        </div>
+
+        <ul class="group-list" id="group-list">
+          <!--Groups List-->
+        </ul>
+
+
+      <div id="videos-container">
+        <video id="local-video" autoplay muted playsinline></video>
+        <video id="remote-video" autoplay playsinline></video>
+      </div>
+      <div class="call-controls">
+        <button id="call-button" disabled>Call</button>
+        <button id="hangup-button" disabled>Hang Up</button>
+      </div>
+
+
+        <ul class="messages" id="messages"></ul>
+        <form class="message-form" id="form">
+            <input class="message-input" id="input" autocomplete="off" placeholder="ketik pesan..." required />
+            <button class="message-button" id="send-button">kirim</button>
+        </form>
+
+        <!-- Create Group Modal (Hidden by default) -->
+        <div id="create-group-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.5); z-index: 10;">
+            <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background-color: white; padding: 20px; border-radius: 8px;">
+                <h2>Buat Grup Baru</h2>
+                <input type="text" id="new-group-name" placeholder="Nama Grup" />
+                <button id="create-group-button">Buat</button>
+                <button id="cancel-group-button">Batal</button>
+            </div>
+        </div>
+        <button id="open-create-group-modal">Buat Grup</button> <span>atau</span>
+        <input type="text" id="join-group-id" placeholder="ID Grup untuk Bergabung">
+        <button id="join-group-button">Gabung</button>
+
+    </div>
 
     <script src="/socket.io/socket.io.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <script>
-      var socket = io(); // Connect to the server
+        const socket = io();
+        const form = document.getElementById('form');
+        const input = document.getElementById('input');
+        const messages = document.getElementById('messages');
+        const sendButton = document.getElementById('send-button');
+        const groupList = document.getElementById('group-list');
 
-      var form = document.getElementById('form');
-      var input = document.getElementById('input');
-      var messages = document.getElementById('messages');
+        // Group creation elements
+        const openCreateGroupModalButton = document.getElementById('open-create-group-modal');
+        const createGroupModal = document.getElementById('create-group-modal');
+        const newGroupNameInput = document.getElementById('new-group-name');
+        const createGroupButton = document.getElementById('create-group-button');
+        const cancelGroupButton = document.getElementById('cancel-group-button');
+        const joinGroupIdInput = document.getElementById('join-group-id');
+        const joinGroupButton = document.getElementById('join-group-button');
 
-      form.addEventListener('submit', function(e) {
-        e.preventDefault();
-        if (input.value) {
-          socket.emit('chat message', input.value); // Send 'chat message' event
-          input.value = '';
+        // --- WebRTC Elements ---
+        const localVideo = document.getElementById('local-video');
+        const remoteVideo = document.getElementById('remote-video');
+        const callButton = document.getElementById('call-button');
+        const hangupButton = document.getElementById('hangup-button');
+        let localStream;
+        let peerConnection;
+        let currentGroupId = null; // Track the active group
+
+
+        // --- Group Management UI ---
+
+      function updateGroupList(groupsData) {
+        groupList.innerHTML = ''; // Clear existing list
+
+        for (const groupId in groupsData) {
+            const group = groupsData[groupId];
+            const listItem = document.createElement('li');
+            listItem.textContent = group.name;
+            listItem.classList.add('group-item');
+            listItem.dataset.groupId = groupId; // Store groupId as a data attribute
+            listItem.addEventListener('click', () => selectGroup(groupId));
+            groupList.appendChild(listItem);
         }
+        //Auto join first group if exist and no group joined
+        if (currentGroupId === null && Object.keys(groupsData).length > 0) {
+          selectGroup(Object.keys(groupsData)[0]);
+        }
+      }
+
+      function selectGroup(groupId) {
+        currentGroupId = groupId;
+
+        // Update UI to show active group
+        document.querySelectorAll('.group-item').forEach(item => {
+          item.classList.remove('active');
+        });
+        const selectedGroupItem = document.querySelector(`.group-item[data-group-id="${groupId}"]`);
+        if (selectedGroupItem) {
+          selectedGroupItem.classList.add('active');
+        }
+
+        // Clear messages and reload for the selected group
+        messages.innerHTML = '';
+        // You *could* fetch past messages here from a server-side history (if you implement it).
+        callButton.disabled = false; // Enable call button
+      }
+
+
+      // Modal event listeners
+        openCreateGroupModalButton.addEventListener('click', () => {
+            createGroupModal.style.display = 'block';
+        });
+
+        cancelGroupButton.addEventListener('click', () => {
+            createGroupModal.style.display = 'none';
+            newGroupNameInput.value = '';
+        });
+        createGroupButton.addEventListener('click', () => {
+            const groupName = newGroupNameInput.value.trim();
+            if (groupName) {
+                socket.emit('create group', groupName, (response) => {
+                    if (response.success) {
+                        console.log('Group created:', response.groupId, response.groupName);
+                        // Add the new group to the UI
+                        updateGroupList({[response.groupId]:{name: response.groupName}});
+                        selectGroup(response.groupId); //Auto Select New Group
+
+                    } else {
+                        console.error('Group creation failed:', response.message);
+                    }
+                });
+                createGroupModal.style.display = 'none';
+                newGroupNameInput.value = '';
+            }
+        });
+          joinGroupButton.addEventListener('click', () => {
+          const groupId = joinGroupIdInput.value.trim();
+          if (groupId) {
+            socket.emit('join group', groupId, (response) => {
+              if (response.success) {
+                console.log('Joined group:', groupId, response.groupName);
+                // You'd ideally get the *current* group list from the server here.
+                //  For simplicity, we'll just add this one group to the UI.
+                updateGroupList({ [groupId]: { name: response.groupName } });
+                selectGroup(groupId);
+              } else {
+                console.error('Failed to join group:', response.message);
+                 alert("Failed to join group: " + response.message);
+              }
+            });
+            joinGroupIdInput.value = '';
+          }
+        });
+
+        // --- Message Handling ---
+      sendButton.disabled = true;
+      input.addEventListener('input', () => {
+          sendButton.disabled = !input.value.trim();
       });
 
-      socket.on('chat message', function(msg) {
-        var item = document.createElement('li');
-        item.textContent = msg;
-        messages.appendChild(item);
-        window.scrollTo(0, document.body.scrollHeight);
-      });
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            if (input.value.trim() && currentGroupId) {
+                socket.emit('chat message', { groupId: currentGroupId, msg: input.value });
+                addMessage(input.value, 'sent', socket.id); // Show sent message immediately
+                input.value = '';
+                sendButton.disabled = true;
+            }
+        });
+          function addMessage(msg, type, senderId) {
+          const item = document.createElement('li');
+          item.textContent = `${senderId === socket.id ? 'You' : senderId}: ${msg}`;
+          item.classList.add(type);
+          messages.appendChild(item);
+          messages.scrollTop = messages.scrollHeight;
+          gsap.from(item, { opacity: 0, y: 20, duration: 0.3, ease: 'power2.out' });
+        }
+
+          socket.on('chat message', (data) => {
+            //Only show message from current group
+            if (data.groupId === currentGroupId) {
+                addMessage(data.msg, data.sender === socket.id ? 'sent' : 'received', data.sender);
+            }
+          });
+
+         // --- WebRTC Implementation ---
+
+      async function startLocalStream() {
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+          localStream = stream;
+          localVideo.srcObject = stream;
+        } catch (error) {
+          console.error('Error accessing media devices:', error);
+          alert('Error accessing camera/microphone.  Please ensure you have granted permission.');
+        }
+      }
+
+      // Configuration for STUN/TURN (replace with your TURN server if needed)
+        const configuration = {
+          iceServers: [
+            { urls: 'stun:stun.l.google.com:19302' }, // Google's public STUN server
+            // { urls: 'turn:your-turn-server.com', username: 'your-username', credential: 'your-password' } // Add your TURN server here
+          ]
+        };
+
+        function createPeerConnection() {
+          peerConnection = new RTCPeerConnection(configuration);
+
+          // Add local stream tracks to the peer connection
+          localStream.getTracks().forEach(track => {
+            peerConnection.addTrack(track, localStream);
+          });
+
+          // Handle ICE candidates
+          peerConnection.onicecandidate = event => {
+            if (event.candidate) {
+              socket.emit('ice-candidate', { targetSocketId: getOtherMemberInGroup(), candidate: event.candidate });
+            }
+          };
+
+            // Handle incoming stream
+          peerConnection.ontrack = event => {
+            remoteVideo.srcObject = event.streams[0];
+             hangupButton.disabled = false; // Enable hangup button
+          };
+        }
+
+        callButton.addEventListener('click', async () => {
+            if (!localStream) {
+              await startLocalStream();
+            }
+            if(!currentGroupId) return;
+
+            createPeerConnection();
+             // Create offer
+            try{
+              const offer = await peerConnection.createOffer();
+              await peerConnection.setLocalDescription(offer);
+              socket.emit('offer', { targetSocketId: getOtherMemberInGroup(), offer }); // Send to other group member
+            } catch(error) {
+              console.error("Error Create Offer", error);
+            }
+
+        });
+
+        socket.on('offer', async (data) => {
+          if (!localStream) {
+            await startLocalStream();
+          }
+          if(!currentGroupId) return;
+          createPeerConnection();
+          await peerConnection.setRemoteDescription(new RTCSessionDescription(data.offer));
+          const answer = await peerConnection.createAnswer();
+          await peerConnection.setLocalDescription(answer);
+          socket.emit('answer', { targetSocketId: data.sender, answer });
+        });
+
+        socket.on('answer', async (data) => {
+             if(!currentGroupId) return;
+             await peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
+        });
+
+        socket.on('ice-candidate', async (data) => {
+            if(!currentGroupId) return;
+          await peerConnection.addIceCandidate(new RTCIceCandidate(data.candidate));
+        });
+
+        hangupButton.addEventListener('click', () => {
+            if (peerConnection) {
+                peerConnection.close();
+                peerConnection = null;
+            }
+            if (localStream) {
+                localStream.getTracks().forEach(track => track.stop());
+                localStream = null;
+            }
+            localVideo.srcObject = null;
+            remoteVideo.srcObject = null;
+
+            hangupButton.disabled = true; //Disable Hangup button
+        });
+
+         // Utility function to get the socket ID of the other member in the group
+        function getOtherMemberInGroup() {
+            //For simplicity, just one to one call, get other user
+           // In a real group call, you'd need to handle multiple peers
+            if(!currentGroupId) return;
+            const currentGroup = groups[currentGroupId];
+            if(currentGroup){
+              const otherMembers = currentGroup.members.filter(id => id !== socket.id);
+              return otherMembers[0]; //Return First Other Member, handle call to all members.
+            }
+            return null;
+        }
+
+        // --- Socket.IO Event for Group Updates ---
+        // This is where the server notifies clients about changes in groups
+          socket.on('group update', (updatedGroups) => {
+            groups = updatedGroups;
+            updateGroupList(groups);
+          });
+
+           // Initial group list fetch (you could also do this on 'connection')
+          socket.emit('get groups', (initialGroups) => { // Assuming you add a 'get groups' event on the server.
+            groups = initialGroups;
+            updateGroupList(groups);
+          });
+
+          //Listen User Join
+          socket.on('user joined', (userId) =>{
+            console.log('user joined group: ', userId);
+            // Handle the user joining (e.g., update UI, prepare for potential call)
+          });
+
+          socket.on('user left', (userId) => {
+            console.log('user left group: ', userId);
+            // Handle the user leaving (e.g., update UI, close any peer connections)
+             if(peerConnection){
+              hangupButton.click(); // auto end call
+            }
+          });
     </script>
-  </body>
+</body>
 </html>
