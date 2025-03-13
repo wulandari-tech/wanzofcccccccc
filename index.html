@@ -1,175 +1,541 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Wanzofc Socket</title>
-  <style>
-    body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      margin: 0;
-      padding: 0;
-      background-color: #f0f2f5;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      min-height: 100vh;
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wanzofc Chat</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh; /* Penting untuk full height */
+        }
 
-    .chat-container {
-      width: 90%;
-      max-width: 600px;
-      background-color: #fff;
-      border-radius: 10px;
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-      height: 80vh;
-    }
+        .chat-container {
+            width: 100%; /* Full width */
+            height: 100vh; /* Full height */
+            max-width: 100%; /* Tidak ada max-width */
+            background-color: #fff;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden; /* Penting */
+            position: relative; /*Untuk modal*/
+        }
 
-    .chat-header {
-      background-color: #007bff; /* Blue header - more professional */
-      color: #fff;
-      padding: 15px;
-      text-align: center;
-      font-weight: bold;
-      border-bottom: 1px solid #ddd;
-    }
+        .chat-header {
+            background-color: #3490dc; /* Biru */
+            color: #fff;
+            padding: 15px;
+            text-align: center;
+            font-weight: bold;
+            border-bottom: 1px solid #ddd;
+        }
 
-    .messages {
-      list-style: none;
-      padding: 15px;
-      margin: 0;
-      overflow-y: auto;
-      flex-grow: 1;
-    }
+        .messages {
+            list-style: none;
+            padding: 15px;
+            margin: 0;
+            overflow-y: auto; /* Scrollable messages */
+            flex-grow: 1; /* Isi ruang yang tersedia */
+        }
+        .messages li {
+			margin-bottom: 10px;
+			padding: 10px;
+			border-radius: 8px;
+			word-wrap: break-word;
+			max-width: 80%;
+			display: flex; /* Flexbox for avatar and message */
+			align-items: flex-start; /* Align items to the top */
+			gap: 10px;
+        }
 
-    .messages li {
-      margin-bottom: 10px;
-      padding: 10px;
-      border-radius: 8px;
-      word-wrap: break-word;
-      max-width: 80%;
-      position: relative; /* For absolute positioning of timestamp */
-    }
+		.messages li.sent {
+			background-color: #dcf8c6;
+			align-self: flex-end;
+			flex-direction: row-reverse; /* Avatar on the right */
+		}
+		.messages li.received {
+			background-color: #f1f1f1;
+			align-self: flex-start;
+		}
 
-    .messages li.sent {
-      background-color: #dcf8c6; /* Light green for sent messages */
-      align-self: flex-end;
-      text-align: right;
-    }
+        .message-form {
+            display: flex;
+            padding: 10px;
+            border-top: 1px solid #ddd;
+            background-color: #f8f9fa;
+        }
 
-    .messages li.received {
-      background-color: #f1f1f1; /* Light gray for received messages */
-      align-self: flex-start;
-      text-align: left;
-    }
+        .message-input {
+            flex-grow: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 20px; /* Rounded input */
+            margin-right: 10px;
+            font-size: 16px;
+            outline: none;
+            transition: border-color 0.2s ease;
+        }
 
-    .message-form {
-      display: flex;
-      padding: 10px;
-      border-top: 1px solid #ddd;
-    }
+        .message-input:focus {
+            border-color: #3490dc; /* Highlight on focus */
+        }
 
-    .message-input {
-      flex-grow: 1;
-      padding: 10px;
-      border: 1px solid #ddd;
-      border-radius: 5px;
-      margin-right: 10px;
-      font-size: 16px;
-      outline: none;
-    }
 
-    .message-button {
-      background-color: #007bff; /* Blue button - consistent with header */
-      color: #fff;
-      border: none;
-      padding: 10px 15px;
-      border-radius: 5px;
-      cursor: pointer;
-      font-size: 16px;
-      transition: background-color 0.2s ease;
-    }
+        .message-button {
+            background-color: #3490dc;
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 20px; /* Rounded button */
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.2s ease;
+        }
 
-    .message-button:hover {
-      background-color: #0056b3; /* Darker blue on hover */
-    }
-    .message-button:disabled {
-        background-color: #91b892;
-        cursor: not-allowed;
-    }
+        .message-button:hover {
+            background-color: #2779bd;
+        }
+        .message-button:disabled {
+            background-color: #91b892;
+            cursor: not-allowed;
+        }
 
-    .timestamp {
-      font-size: 0.8em;
-      color: #888;
-      margin-top: 2px;
-      display: block;
-    }
+        .timestamp {
+            font-size: 0.75em;
+            color: #888;
+            margin-top: 4px; /* Add some space */
+        }
 
-    .sent .timestamp {
-      text-align: right;
-    }
 
-    .received .timestamp {
-      text-align: left;
-    }
+        .avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%; /* Make it circular */
+            background-color: #ddd; /* Default background */
+            object-fit: cover; /* Ensure image covers the circle */
+            flex-shrink: 0;
+        }
 
-  </style>
+        /* Modal Styles */
+        .modal {
+            display: none; /* Hidden by default */
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent background */
+            z-index: 10; /* Above other content */
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            width: 90%; /* Responsive width */
+            max-width: 400px; /* Max width */
+        }
+
+        .close-button {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            font-size: 24px;
+            cursor: pointer;
+            color: #888;
+            transition: color 0.2s;
+        }
+        .close-button:hover{
+            color: #000;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+
+        .form-button {
+            background-color: #3490dc;
+            color: #fff;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            width: 100%;
+            transition: background-color 0.2s ease;
+        }
+        .form-button:hover{
+             background-color: #2779bd;
+        }
+        .auth-links {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 15px;
+        }
+        .auth-links a {
+            color: #3490dc;
+            text-decoration: none;
+        }
+        .auth-links a:hover{
+             text-decoration: underline;
+        }
+        .profile-preview-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+         #profile-preview {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: #ddd;
+            object-fit: cover;
+
+        }
+        .modal.active {
+            display: flex;  /*Tampilkan modal */
+        }
+        .message-text {
+            flex-grow: 1;
+        }
+
+    </style>
 </head>
 <body>
-  <div class="chat-container">
-    <div class="chat-header">Wanzofc Socket</div>
-    <ul class="messages" id="messages"></ul>
-    <form class="message-form" id="form">
-      <input class="message-input" id="input" autocomplete="off" placeholder="Ketik pesan..." required />
-      <button class="message-button" id="send-button">Kirim</button>
-    </form>
-  </div>
+    <div class="chat-container" id="chat-container">
+        <div class="chat-header">Wanzofc Chat</div>
+        <ul class="messages" id="messages"></ul>
+        <form class="message-form" id="form">
+            <input class="message-input" id="input" autocomplete="off" placeholder="Ketik pesan..." required />
+            <button class="message-button" id="send-button">Kirim</button>
+        </form>
 
-  <script src="/socket.io/socket.io.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
-  <script>
-    const socket = io();
-    const form = document.getElementById('form');
-    const input = document.getElementById('input');
-    const messages = document.getElementById('messages');
-    const sendButton = document.getElementById('send-button');
+        <!-- Modal -->
+        <div class="modal" id="auth-modal">
+            <div class="modal-content">
+                <span class="close-button" id="close-modal">×</span>
+                <h2 class="text-2xl font-bold mb-4" id="modal-title">Login</h2>
 
-    sendButton.disabled = true;
-    input.addEventListener('input', () => {
-        sendButton.disabled = !input.value.trim();
-    });
+                <!-- Form Login -->
+                <form id="login-form" class="form-container">
+                    <div class="form-group">
+                        <label for="login-username" class="form-label">Username</label>
+                        <input type="text" id="login-username" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="login-password" class="form-label">Password</label>
+                        <input type="password" id="login-password" class="form-input" required>
+                    </div>
+                     <div class="form-group profile-preview-wrapper">
+                        <label for="login-profile-pic" class="form-label">Foto Profil</label>
+                         <input type="file" id="login-profile-pic" accept="image/*">
+                        <img id="login-profile-preview" src="" alt="Pratinjau Profil">
+                    </div>
+                    <button type="submit" class="form-button">Login</button>
+                </form>
 
-    form.addEventListener('submit', (e) => {
-      e.preventDefault();
-      if (input.value.trim()) {
-        socket.emit('chat message', input.value);
-        input.value = '';
+                <!-- Form Signup -->
+                <form id="signup-form" class="form-container hidden">
+                    <div class="form-group">
+                        <label for="signup-username" class="form-label">Username</label>
+                        <input type="text" id="signup-username" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="signup-password" class="form-label">Password</label>
+                        <input type="password" id="signup-password" class="form-input" required>
+                    </div>
+                    <div class="form-group profile-preview-wrapper">
+                        <label for="signup-profile-pic" class="form-label">Foto Profil</label>
+                        <input type="file" id="signup-profile-pic" accept="image/*">
+                        <img id="signup-profile-preview" src="" alt="Pratinjau Profil">
+                    </div>
+
+                    <button type="submit" class="form-button">Sign Up</button>
+                </form>
+
+                <div class="auth-links">
+                    <a href="#" id="toggle-signup">Sign Up</a>
+                    <a href="#" id="toggle-login" class="hidden">Login</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script>
+
+        const socket = io();
+        const form = document.getElementById('form');
+        const input = document.getElementById('input');
+        const messages = document.getElementById('messages');
+        const sendButton = document.getElementById('send-button');
+
+        //Modal
+        const authModal = document.getElementById('auth-modal');
+        const closeModalButton = document.getElementById('close-modal');
+        const loginForm = document.getElementById('login-form');
+        const signupForm = document.getElementById('signup-form');
+        const toggleSignupLink = document.getElementById('toggle-signup');
+        const toggleLoginLink = document.getElementById('toggle-login');
+        const modalTitle = document.getElementById('modal-title');
+        const chatContainer = document.getElementById('chat-container'); // Get the chat container
+
+		// Profile picture previews
+		const loginProfilePreview = document.getElementById('login-profile-preview');
+		const signupProfilePreview = document.getElementById('signup-profile-preview');
+		const loginProfileInput = document.getElementById('login-profile-pic');
+		const signupProfileInput = document.getElementById('signup-profile-pic');
+
+
+
+        let isLoggedIn = false; // Status login
+        let currentUser = null; //{username, userId, profilePic} simpan user
+
+        // --- Modal Function ---
+        function showModal(formType) {
+            authModal.classList.add('active');
+            if (formType === 'login') {
+                loginForm.classList.remove('hidden');
+                signupForm.classList.add('hidden');
+                toggleLoginLink.classList.add('hidden');
+                toggleSignupLink.classList.remove('hidden');
+                modalTitle.textContent = 'Login';
+            } else {
+                signupForm.classList.remove('hidden');
+                loginForm.classList.add('hidden');
+                toggleSignupLink.classList.add('hidden');
+                toggleLoginLink.classList.remove('hidden');
+                modalTitle.textContent = 'Sign Up';
+            }
+             // Tambahkan animasi GSAP saat menampilkan modal
+            gsap.from(authModal, { duration: 0.4, opacity: 0, scale: 0.9, ease: "back.out(1.7)" });
+
+        }
+
+        function closeModal(){
+            authModal.classList.remove('active');
+            //reset form
+            loginForm.reset();
+            signupForm.reset();
+            loginProfilePreview.src = '';
+            signupProfilePreview.src = '';
+
+
+        }
+
+		function updateModalContent(isLoggedIn) {
+			if (isLoggedIn) {
+				// Sembunyikan modal
+				closeModal();
+			} else {
+				// Tampilkan modal login
+				showModal('login');
+			}
+		}
+
+         function handleLogin(username, userId, profilePicUrl) {
+            isLoggedIn = true;
+            currentUser = { username, userId, profilePic: profilePicUrl };
+            closeModal(); // Sembunyikan modal setelah login berhasil
+            chatContainer.classList.remove('hidden'); // Tampilkan kontainer chat
+
+            // Kirim event ke server untuk memberi tahu login
+            socket.emit('user login', currentUser);
+
+            // Tambahkan pesan selamat datang di riwayat chat
+            const welcomeMessage = {
+                msg: `Selamat datang, ${username}!`,
+                sender: 'system', // Atau ID khusus untuk pesan sistem
+                timestamp: Date.now(),
+                profilePic: null, // Pesan sistem mungkin tidak memiliki foto profil
+            };
+            addMessage(welcomeMessage, 'received');
+        }
+
+
+        // --- Event Modal ---
+
+        closeModalButton.addEventListener('click', closeModal);
+        toggleSignupLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            showModal('signup');
+        });
+        toggleLoginLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            showModal('login');
+        });
+
+		//Preview profile
+		loginProfileInput.addEventListener('change', (event) => {
+			const file = event.target.files[0];
+			if(file) {
+				const reader = new FileReader();
+				reader.onload = (e) => {
+					loginProfilePreview.src = e.target.result;
+				}
+				reader.readAsDataURL(file);
+			}
+		});
+
+		signupProfileInput.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                signupProfilePreview.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // --- Form Submit ---
+
+        loginForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+             const username = document.getElementById('login-username').value;
+            const password = document.getElementById('login-password').value; // Simpan password
+            const profilePicFile = loginProfileInput.files[0];
+                // Simulasi login (ganti dengan request ke server di aplikasi nyata)
+                // Di sini, kita asumsikan login berhasil jika username dan password ada
+
+                if (username && password) { // Periksa juga password
+                    const reader = new FileReader();
+
+                    reader.onload = function(fileEvent) {
+                        const profilePicUrl = fileEvent.target.result;  //Data URL foto
+                        // Simulasi ID pengguna (ganti dengan ID dari server di aplikasi nyata)
+                        const userId = 'user_' + Math.random().toString(36).substring(2, 15);
+                        handleLogin(username, userId, profilePicUrl);
+
+                    }
+
+                    if(profilePicFile){
+                        reader.readAsDataURL(profilePicFile)
+                    } else{
+                        //Jika user tidak upload, pakai avatar default
+                        handleLogin(username, 'user_' + Math.random().toString(36).substring(2,15), '');
+                    }
+                }
+        });
+
+        signupForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const username = document.getElementById('signup-username').value;
+            const password = document.getElementById('signup-password').value;
+            const profilePicFile = signupProfileInput.files[0];
+
+             if (username && password) { //cek juga password
+                const reader = new FileReader();
+                reader.onload = function (fileEvent) {
+                    const profilePicUrl = fileEvent.target.result;
+
+                    const userId = 'user_' + Math.random().toString(36).substring(2, 15);
+
+                     handleLogin(username, userId, profilePicUrl);
+
+                }
+                if(profilePicFile) {
+                    reader.readAsDataURL(profilePicFile);
+                }else {
+                    handleLogin(username, 'user_' + Math.random().toString(36).substring(2, 15), '');
+                }
+            }
+
+        });
+
+        // --- Chat Event ---
         sendButton.disabled = true;
-      }
-    });
+        input.addEventListener('input', () => {
+            sendButton.disabled = !input.value.trim();
+        });
 
-    function addMessage(messageObj, type) {
-      const item = document.createElement('li');
-      const formattedTime = new Date(messageObj.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-      item.innerHTML = `${messageObj.msg}<span class="timestamp">${formattedTime}</span>`;
-      item.classList.add(type);
-      messages.appendChild(item);
-      messages.scrollTop = messages.scrollHeight;
-      gsap.from(item, { opacity: 0, y: 20, duration: 0.3, ease: 'power2.out' });
-    }
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            if (input.value.trim() && isLoggedIn) { //kirim pesan jika user sudah login
+                // Kirim objek pesan lengkap, termasuk informasi pengguna
+                socket.emit('chat message', {
+                    msg: input.value,
+                    user: currentUser, // Sertakan informasi pengguna
+                });
+                input.value = '';
+                sendButton.disabled = true;
+            }
+        });
 
-    socket.on('chat message', (messageObj) => {
-      addMessage(messageObj, messageObj.sender === socket.id ? 'sent' : 'received');
-    });
 
-    socket.on('chat history', (history) => {
-      history.forEach(messageObj => {
-        addMessage(messageObj, messageObj.sender === socket.id ? 'sent' : 'received');
-      });
-    });
-  </script>
+        // --- Socket Event ---
+        socket.on('chat message', (messageObj) => {
+			// Cek apakah pesan dari pengguna saat ini atau pengguna lain
+			const messageType = messageObj.user.userId === currentUser.userId ? 'sent' : 'received';
+			addMessage(messageObj, messageType);
+		});
+
+        socket.on('chat history', (history) => {
+              history.forEach(messageObj => {
+                //Di sini, untuk pesan historis, kita perlu menentukan dari mana pesan itu berasal.
+                //Kita asumsikan pesan historis BUKAN dari pengguna saat ini, KECUALI jika ID pengirimnya cocok.
+                const messageType = messageObj.sender === socket.id ? 'sent' : 'received';
+                addMessage(messageObj, messageType); //Melewatkan 'received', atau Anda bisa buat logic lebih detail.
+            });
+        });
+
+        // --- Message Function---
+        function addMessage(messageObj, type) {
+            const item = document.createElement('li');
+            const avatar = document.createElement('img');
+            avatar.classList.add('avatar');
+			avatar.src = messageObj.user.profilePic || 'default-avatar.png'; // Gunakan default jika tidak ada
+            const messageContent = document.createElement('div'); //div
+            messageContent.classList.add('message-text')
+
+            const formattedTime = new Date(messageObj.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            messageContent.innerHTML = `${messageObj.msg}<span class="timestamp">${formattedTime}</span>`;
+
+            if (type === 'sent') {
+                item.appendChild(messageContent)
+                item.appendChild(avatar);
+            }else {
+                item.appendChild(avatar); // Avatar di kiri
+			    item.appendChild(messageContent); // Teks pesan
+
+            }
+
+            item.classList.add(type);
+
+            messages.appendChild(item);
+            messages.scrollTop = messages.scrollHeight;
+            gsap.from(item, { opacity: 0, y: 20, duration: 0.3, ease: 'power2.out' });
+        }
+
+
+		// --- Initial Setup ---
+		updateModalContent(isLoggedIn); // Periksa status login awal
+
+
+    </script>
 </body>
 </html>
