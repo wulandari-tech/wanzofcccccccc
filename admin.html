@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Admin Panel</title>
+    <style>
+        body { font-family: sans-serif; }
+        #activity-log { border: 1px solid #ccc; padding: 10px; margin-bottom: 10px; height: 200px; overflow-y: scroll; }
+        #chat-history { border: 1px solid #ccc; padding: 10px; margin-bottom: 20px; height: 300px; overflow-y: scroll;}
+        .log-entry { margin-bottom: 5px; }
+        .message-entry { margin-bottom: 5px; }
+        .timestamp { color: #888; font-size: 0.8em; }
+    </style>
+</head>
+<body>
+    <h1>Admin Panel</h1>
+
+    <h2>Aktivitas Pengguna</h2>
+    <div id="activity-log"></div>
+
+    <h2>Riwayat Chat</h2>
+     <div id="chat-history"></div>
+    <button id="clear-chat">Hapus Riwayat Chat</button>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+
+        const activityLog = document.getElementById('activity-log');
+        const chatHistoryDiv = document.getElementById('chat-history');
+        const clearChatButton = document.getElementById('clear-chat');
+
+        // Fungsi untuk menambahkan entri log aktivitas
+        function addActivityLog(message) {
+            const logEntry = document.createElement('div');
+            logEntry.classList.add('log-entry');
+            logEntry.textContent = message;
+            activityLog.appendChild(logEntry);
+            activityLog.scrollTop = activityLog.scrollHeight; // Auto-scroll
+        }
+
+
+         //Fungsi untuk menambahkan chat history
+         function addChatHistory(messages) {
+             chatHistoryDiv.innerHTML = ''; // Bersihkan tampilan sebelum menambahkan yang baru
+             messages.forEach(message => {
+                  const messageEntry = document.createElement('div');
+                 messageEntry.classList.add('message-entry');
+                 messageEntry.innerHTML = `
+                     <span class="timestamp">${new Date(message.timestamp).toLocaleString()}</span> -
+                     <strong>${message.sender}</strong>: ${message.msg}
+                 `;
+                 chatHistoryDiv.appendChild(messageEntry);
+             });
+             chatHistoryDiv.scrollTop = chatHistoryDiv.scrollHeight;
+         }
+
+        // Menerima log aktivitas dari server
+        socket.on('admin:activity', (message) => {
+            addActivityLog(message);
+        });
+
+        socket.on('admin:chat-history', (history) => {
+             addChatHistory(history);
+        });
+
+        // Menangani klik tombol hapus chat
+        clearChatButton.addEventListener('click', () => {
+            socket.emit('admin:clear-chat');
+        });
+
+         socket.on('admin:chat-cleared', () =>{
+             chatHistoryDiv.innerHTML = '<div>Riwayat Chat Telah di Hapus.</div>';
+         })
+
+    </script>
+</body>
+</html>
