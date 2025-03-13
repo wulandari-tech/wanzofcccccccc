@@ -1,76 +1,148 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Admin Panel</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wanzofc Admin Panel</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <style>
-        body { font-family: sans-serif; }
-        #activity-log { border: 1px solid #ccc; padding: 10px; margin-bottom: 10px; height: 200px; overflow-y: scroll; }
-        #chat-history { border: 1px solid #ccc; padding: 10px; margin-bottom: 20px; height: 300px; overflow-y: scroll;}
-        .log-entry { margin-bottom: 5px; }
-        .message-entry { margin-bottom: 5px; }
-        .timestamp { color: #888; font-size: 0.8em; }
+        /* Custom Styles (Selain Tailwind) */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; /* Font yang lebih modern */
+            background-color: #f4f4f8; /* Warna latar belakang yang lembut */
+        }
+
+        .container {
+            max-width: 900px; /* Lebar konten yang terpusat */
+            margin: 30px auto;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .log-entry, .message-entry {
+            padding: 8px 12px;
+            border-radius: 4px;
+            margin-bottom: 5px;
+            transition: background-color 0.2s ease; /* Transisi hover */
+        }
+
+        .log-entry:hover, .message-entry:hover {
+            background-color: #f9f9f9;
+        }
+
+        .timestamp {
+            color: #777;
+            font-size: 0.85em;
+        }
+
+        .brand-logo {
+            font-size: 2em;
+            font-weight: bold;
+            color: #3490dc;  /* Warna biru cerah */
+            margin-bottom: 1rem;
+        }
+         #chat-history, #activity-log{
+            height: 300px;
+            overflow-y: scroll;
+            border: 1px solid #e2e8f0; /* Warna border yang lebih halus */
+            margin-bottom: 1rem;
+        }
+
     </style>
 </head>
 <body>
-    <h1>Admin Panel</h1>
+    <div class="container">
+        <h1 class="brand-logo">Wanzofc Admin Panel</h1>
 
-    <h2>Aktivitas Pengguna</h2>
-    <div id="activity-log"></div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+                <h2 class="text-xl font-semibold mb-3">Aktivitas Pengguna</h2>
+                <div id="activity-log" class="bg-white p-4 rounded-md"></div>
+            </div>
 
-    <h2>Riwayat Chat</h2>
-     <div id="chat-history"></div>
-    <button id="clear-chat">Hapus Riwayat Chat</button>
+            <div>
+                <h2 class="text-xl font-semibold mb-3">Riwayat Chat</h2>
+                <div id="chat-history" class="bg-white p-4 rounded-md"></div>
+                <button id="clear-chat" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-full mt-4 transition duration-300">
+                    Hapus Riwayat Chat
+                </button>
+            </div>
+        </div>
+    </div>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
     <script src="/socket.io/socket.io.js"></script>
     <script>
         const socket = io();
-
         const activityLog = document.getElementById('activity-log');
         const chatHistoryDiv = document.getElementById('chat-history');
         const clearChatButton = document.getElementById('clear-chat');
 
-        // Fungsi untuk menambahkan entri log aktivitas
+        // GSAP Animations
+        gsap.from('.brand-logo', { duration: 1, y: -50, opacity: 0, ease: "power3.out" });
+        gsap.from('.container', { duration: 1, opacity: 0, scale: 0.95, ease: "back.out(1.7)" , delay: 0.5});
+
+        // --- Fungsi-fungsi Bantuan ---
         function addActivityLog(message) {
             const logEntry = document.createElement('div');
-            logEntry.classList.add('log-entry');
+            logEntry.classList.add('log-entry', 'bg-gray-100'); // Tambahkan kelas Tailwind
             logEntry.textContent = message;
             activityLog.appendChild(logEntry);
             activityLog.scrollTop = activityLog.scrollHeight; // Auto-scroll
+
+            // Animasi GSAP saat menambahkan log baru
+            gsap.from(logEntry, { duration: 0.5, opacity: 0, x: -20, ease: "power2.out" });
+        }
+
+        function addChatHistory(messages) {
+            chatHistoryDiv.innerHTML = ''; // Bersihkan tampilan
+            messages.forEach(message => {
+                const messageEntry = document.createElement('div');
+                messageEntry.classList.add('message-entry');
+                messageEntry.innerHTML = `
+                    <span class="timestamp">${new Date(message.timestamp).toLocaleString()}</span> -
+                    <strong>${message.sender}</strong>: ${message.msg}
+                `;
+                chatHistoryDiv.appendChild(messageEntry);
+
+                //Animasi GSAP
+                gsap.from(messageEntry, { duration: 0.5, opacity: 0, y: 20, ease: "power2.out" });
+
+            });
+            chatHistoryDiv.scrollTop = chatHistoryDiv.scrollHeight;
         }
 
 
-         //Fungsi untuk menambahkan chat history
-         function addChatHistory(messages) {
-             chatHistoryDiv.innerHTML = ''; // Bersihkan tampilan sebelum menambahkan yang baru
-             messages.forEach(message => {
-                  const messageEntry = document.createElement('div');
-                 messageEntry.classList.add('message-entry');
-                 messageEntry.innerHTML = `
-                     <span class="timestamp">${new Date(message.timestamp).toLocaleString()}</span> -
-                     <strong>${message.sender}</strong>: ${message.msg}
-                 `;
-                 chatHistoryDiv.appendChild(messageEntry);
-             });
-             chatHistoryDiv.scrollTop = chatHistoryDiv.scrollHeight;
-         }
+        // --- Event Listeners ---
 
-        // Menerima log aktivitas dari server
         socket.on('admin:activity', (message) => {
             addActivityLog(message);
         });
 
         socket.on('admin:chat-history', (history) => {
-             addChatHistory(history);
+            addChatHistory(history);
         });
 
-        // Menangani klik tombol hapus chat
         clearChatButton.addEventListener('click', () => {
             socket.emit('admin:clear-chat');
+            // Animasi tombol
+            gsap.to(clearChatButton, { duration: 0.2, scale: 0.95, yoyo: true, repeat: 1, ease: "power1.out" });
         });
 
-         socket.on('admin:chat-cleared', () =>{
-             chatHistoryDiv.innerHTML = '<div>Riwayat Chat Telah di Hapus.</div>';
-         })
+        socket.on('admin:chat-cleared', () => {
+            //chatHistoryDiv.innerHTML = '<div class="text-gray-500 italic">Riwayat Chat Telah di Hapus.</div>';
+            const clearedMessage = document.createElement('div');
+            clearedMessage.classList.add('text-gray-500', 'italic');
+            clearedMessage.textContent = 'Riwayat Chat Telah di Hapus.';
+            chatHistoryDiv.appendChild(clearedMessage);
+            gsap.from(clearedMessage, {duration: 0.8, opacity: 0, ease: "power2.out"});
+        });
+
+         // Animasi awal saat halaman dimuat (contoh)
+        gsap.from(clearChatButton, { duration: 0.8, opacity: 0, y: 20, ease: "back.out(1.7)", delay: 1 });
+
 
     </script>
 </body>
