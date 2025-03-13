@@ -1,21 +1,16 @@
 const express = require('express');
 const http = require('http');
 const { Server } = require("socket.io");
-
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
-
-let chatHistory = []; // Simpan riwayat obrolan di memori
-
+let chatHistory = []; 
 app.get('/', (req, res) => {
   res.sendFile(__dirname + '/index.html');
 });
-
 io.on('connection', (socket) => {
   console.log('a user connected');
 
-  // Kirim riwayat obrolan ke klien yang baru terhubung
   socket.emit('chat history', chatHistory);
 
   socket.on('chat message', (msg) => {
