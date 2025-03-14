@@ -116,8 +116,8 @@
               try {
                   const response = await fetch('/signup', {
                       method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({ username, password })
+                      headers: { 'Content-Type': 'application/json' }, // Penting: Set Content-Type
+                      body: JSON.stringify({ username, password })  // Penting: Kirim sebagai JSON
                   });
                   const data = await response.json();
                   if (response.ok) {
@@ -144,8 +144,8 @@
               try {
                   const response = await fetch('/login', {
                       method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({ username, password })
+                      headers: { 'Content-Type': 'application/json' },  // Penting: Set Content-Type
+                      body: JSON.stringify({ username, password })     // Penting: Kirim sebagai JSON
                   });
                   const data = await response.json();
                   if (response.ok) {
