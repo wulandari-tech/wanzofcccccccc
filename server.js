@@ -1,160 +1,310 @@
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
+const mongoose = require('mongoose');
 
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
-const PORT = process.env.PORT || 3000;
+const PORT = 3000;
+// GANTI INI DENGAN STRING KONEKSI MONGODB ANDA (JANGAN LAKUKAN INI DI APLIKASI NYATA!)
+const MONGODB_URI = 'mongodb+srv://zanssxploit:pISqUYgJJDfnLW9b@cluster0.fgram.mongodb.net/?retryWrites=true&w=majority';
+
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 app.get('/', (req, res) => {
     res.sendFile(__dirname + '/index.html');
 });
 
-// Data (simpan di memori server - TIDAK UNTUK PRODUKSI)
-const users = {};       // { socketId: username }
-const groups = {};      // { groupName: { members: [socketId, ...], messages: [{sender, message, timestamp}, ...] } }
-const privateMessages = {}; // { 'user1:user2': [{sender, message, timestamp}, ...] }  // Kunci unik untuk percakapan
+// --- MongoDB Setup (Sederhana) ---
 
+mongoose.connect(MONGODB_URI)
+  .then(() => console.log('Terhubung ke MongoDB'))
+  .catch(err => console.error('Gagal terhubung ke MongoDB:', err));
+
+// --- Mongoose Models (Langsung di server.js) ---
+
+const userSchema = new mongoose.Schema({
+    username: { type: String, required: true, unique: true },
+    password: { type: String, required: true }, // PLAIN TEXT PASSWORD - SANGAT TIDAK AMAN!
+}, { timestamps: true });
+
+const groupSchema = new mongoose.Schema({
+    name: { type: String, required: true, unique: true },
+    members: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+}, { timestamps: true });
+
+const messageSchema = new mongoose.Schema({
+    sender: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    group: { type: mongoose.Schema.Types.ObjectId, ref: 'Group' },
+    recipient: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    message: { type: String, required: true },
+}, { timestamps: true });
+
+const User = mongoose.model('User', userSchema);
+const Group = mongoose.model('Group', groupSchema);
+const Message = mongoose.model('Message', messageSchema);
+
+// --- Routes (Sederhana) ---
+// Signup (Sangat Tidak Aman)
+app.post('/signup', async (req, res) => {
+    try {
+        const { username, password } = req.body;
+        const user = new User({ username, password }); // Menyimpan password plain text!
+        await user.save();
+        res.status(201).send({ message: 'Signup berhasil', userId: user._id });
+    } catch (error) {
+        res.status(500).send('Error');
+    }
+});
+
+// Login (Sangat Tidak Aman)
+app.post('/login', async (req, res) => {
+    try {
+        const { username, password } = req.body;
+        const user = await User.findOne({ username, password }); // Membandingkan password plain text!
+        if (!user) {
+            return res.status(401).send('Login gagal');
+        }
+        res.status(200).send({ message: 'Login berhasil', userId: user._id });
+    } catch (error) {
+        res.status(500).send('Error');
+    }
+});
+
+// --- Socket.IO (dengan Validasi User ID yang Sangat Lemah) ---
 io.on('connection', (socket) => {
     let currentUsername = null;
-    let currentTarget = null;  // Grup atau pengguna yang sedang diajak chat
+    let currentTarget = null;
 
+    socket.use(async (packet, next) => {
+      const eventName = packet[0];
+      const authEvents = ['user joined', 'create group', 'join group', 'leave group', 'start private chat', 'chat message', 'disconnect'];
 
-    socket.on('user joined', (username) => {
-        currentUsername = username;
-        users[socket.id] = username;
-        console.log(`${username} joined with ID ${socket.id}`);
+        if (authEvents.includes(eventName)) {
+            const userId = packet[1]?.userId;
+            if (!userId) {
+                return next(new Error("Authentication required."));
+            }
 
-        // Kirim daftar pengguna dan grup ke klien baru
+            // Verifikasi SANGAT LEMAH (hanya cek apakah ID ada di database)
+            const user = await User.findById(userId);
+            if (!user) {
+                return next(new Error("Invalid user ID."));
+            }
+            currentUsername = user.username;
+            packet[1].username = currentUsername;
+        }
+        next();
+    });
+
+    socket.on('user joined', async (data) => {
+      const { userId, username } = data;
+        console.log(`${username} joined`);
+
+        // Get all users (except current user)
+        const users = await User.find({ _id: { $ne: userId } }).select('username');
+        // Get all group names
+        const groups = await Group.find().select('name');
+
         socket.emit('initial data', {
-            users: Object.values(users).filter(u => u !== currentUsername), // Semua pengguna kecuali diri sendiri
-            groups: Object.keys(groups),
-            // privateMessages: tidak dikirim di sini, hanya saat chat dengan user tertentu
+            users: users.map(u => u.username),
+            groups: groups.map(g => g.name),
         });
-
-        // Beritahu semua klien lain tentang pengguna baru
         socket.broadcast.emit('user joined', username);
     });
 
-    socket.on('create group', (groupName) => {
-        if (!groups[groupName]) {
-            groups[groupName] = { members: [socket.id], messages: [] };
-            console.log(`${currentUsername} created group ${groupName}`);
+    socket.on('create group', async (data) => {
+        const { groupName, userId } = data;
 
-            // Bergabung ke room Socket.IO untuk grup ini
+        if (!groupName) return;
+
+        try {
+            // Simple check to prevent duplicate groups (could still have race conditions)
+            const existingGroup = await Group.findOne({ name: groupName });
+            if(existingGroup){
+              return socket.emit('error message', 'Nama grup sudah ada.');
+            }
+
+            const group = new Group({ name: groupName, members: [userId] });
+            await group.save();
             socket.join(groupName);
+            io.emit('group list update', [groupName]); // Only send new group name
 
-             // Kirim daftar grup yang diperbarui ke semua klien
-            io.emit('group list update', Object.keys(groups));
+        } catch (error) {
+            console.error("Error creating group:", error);
+            socket.emit('error message', 'Gagal membuat grup.');
+
         }
     });
 
-
-    socket.on('join group', (groupName) => {
-        if (groups[groupName]) {
-          // Cek apakah user sudah jadi anggota
-          if (!groups[groupName].members.includes(socket.id)) {
-              groups[groupName].members.push(socket.id);
-              socket.join(groupName); // Bergabung ke room Socket.IO
-              console.log(`${currentUsername} joined group ${groupName}`);
-              // Kirim riwayat pesan grup ke user yang baru bergabung
-              socket.emit('chat history', {target: groupName, messages: groups[groupName].messages});
-              // Tidak perlu broadcast, karena sudah di-handle oleh server
-          }
-          currentTarget = groupName;
+    socket.on('join group', async (data) => {
+      const { groupName, userId } = data;
+      if (!groupName) return;
+      try {
+        const group = await Group.findOne({ name: groupName });
+        if (!group) {
+            return socket.emit('error message', 'Grup tidak ditemukan.');
         }
-    });
+        if (!group.members.includes(userId)) {
+          group.members.push(userId);
+          await group.save();
+          socket.join(groupName);
 
+          const messages = await Message.find({ group: group._id })
+            .populate('sender', 'username')
+            .sort({ createdAt: 1 });
 
-    socket.on('leave group', (groupName) => {
-      if (groups[groupName] && groups[groupName].members.includes(socket.id)) {
-        groups[groupName].members = groups[groupName].members.filter(id => id !== socket.id);
-        socket.leave(groupName); // Keluar dari room Socket.IO
-        console.log(`${currentUsername} left group ${groupName}`);
-        currentTarget = null;
-
-          //opsional: Hapus grup jika kosong
-          if(groups[groupName].members.length === 0){
-              delete groups[groupName];
-              io.emit('group list update', Object.keys(groups)); // Update group list untuk semua client
-          }
+            socket.emit('chat history', {
+                target: groupName,
+                messages: messages.map(m => ({
+                    sender: m.sender.username,
+                    message: m.message,
+                    timestamp: m.createdAt
+                }))
+            });
+          console.log(`${currentUsername} joined group ${groupName}`);
+        }
+        currentTarget = groupName;
+      } catch(err){
+        console.error("Error joining group:", err);
+        socket.emit('error message', 'Gagal bergabung ke grup.');
       }
+
     });
 
-    socket.on('start private chat', (targetUser) => {
+    socket.on('leave group', async (data) => {
+        const { groupName, userId } = data;
+        if(!groupName) return;
+        try {
+          const group = await Group.findOne({name: groupName});
+          if(!group) return;
+
+          if(group.members.includes(userId)){
+            group.members.pull(userId);
+            await group.save();
+            socket.leave(groupName);
+            console.log(`${currentUsername} left group ${groupName}`);
+            currentTarget = null;
+            if(group.members.length === 0){
+              await Group.deleteOne({_id: group._id});
+              io.emit('group list update', (await Group.find().select('name')).map(g => g.name));
+            }
+          }
+        } catch(err) {
+          console.error("Error leave group", err);
+          socket.emit('error message', "Gagal keluar dari grup");
+        }
+    });
+
+    socket.on('start private chat', async (data) => {
+        const { targetUser, userId } = data;
         currentTarget = targetUser;
 
-        // Buat kunci unik untuk percakapan ini
-        const sortedUsernames = [currentUsername, targetUser].sort();
-        const chatKey = `${sortedUsernames[0]}:${sortedUsernames[1]}`;
+        try {
+          const targetUserObj = await User.findOne({username: targetUser});
+          if(!targetUserObj) return;
+            // Simple key generation (not robust)
+            const users = [userId, targetUserObj._id].sort();
+            const chatKey = `${users[0]}-${users[1]}`;
 
-        // Kirim riwayat pesan privat (jika ada)
-        socket.emit('chat history', {
-            target: targetUser,
-            messages: privateMessages[chatKey] || []
-        });
-    });
+            const messages = await Message.find({
+                $or: [
+                    { sender: users[0], recipient: users[1] },
+                    { sender: users[1], recipient: users[0] }
+                ]
+            })
+            .populate('sender', 'username')
+            .populate('recipient', 'username')
+            .sort({ createdAt: 1 });
 
 
-    socket.on('chat message', (data) => {
-        const { message } = data;
-        const timestamp = new Date();
-        const messageData = { sender: currentUsername, message, timestamp };
+            socket.emit('chat history', {
+                target: targetUser,
+                messages: messages.map(m => ({
+                    sender: m.sender.username,
+                    message: m.message,
+                    timestamp: m.createdAt
+                }))
+            });
 
-        if (currentTarget) {
-            if (groups[currentTarget]) {
-                // Pesan grup
-                groups[currentTarget].messages.push(messageData);
-                io.to(currentTarget).emit('chat message', { ...messageData, target: currentTarget }); // Kirim ke room
-            } else {
-                // Pesan privat
-                const targetSocketId = Object.keys(users).find(key => users[key] === currentTarget);
-                if (targetSocketId) {
-                    // Buat kunci unik
-                    const sortedUsernames = [currentUsername, currentTarget].sort();
-                    const chatKey = `${sortedUsernames[0]}:${sortedUsernames[1]}`;
-
-                    if (!privateMessages[chatKey]) {
-                        privateMessages[chatKey] = [];
-                    }
-                    privateMessages[chatKey].push(messageData);
-					// Kirim ke pengirim dan penerima
-                    socket.emit('chat message', { ...messageData, target: currentTarget });
-                    io.to(targetSocketId).emit('chat message', { ...messageData, target: currentUsername });
-                }
-            }
+        } catch (error) {
+            console.error("Error starting private chat:", error);
+            socket.emit('error message', 'Gagal memulai chat privat.');
         }
     });
 
+    socket.on('chat message', async (data) => {
+        const { message, userId } = data;
+        if (!message) return;
 
-    socket.on('disconnect', () => {
-        if (currentUsername) {
-            console.log(`${currentUsername} disconnected`);
-            delete users[socket.id];
+        try {
+            if (currentTarget) {
+              // Check if currentTarget is group or user
+              const group = await Group.findOne({name: currentTarget});
 
-             // Hapus user dari semua grup tempat dia berada
-            for (const groupName in groups) {
-                if (groups[groupName].members.includes(socket.id)) {
-                  groups[groupName].members = groups[groupName].members.filter(id => id !== socket.id);
-                  socket.leave(groupName);
+              if(group){
+                // Group Message
+                const newMessage = new Message({ sender: userId, group: group._id, message });
+                await newMessage.save();
 
-                   // Hapus grup jika kosong
-                    if (groups[groupName].members.length === 0) {
-                        delete groups[groupName];
-                    }
+                const populatedMessage = await Message.findById(newMessage._id).populate('sender', 'username');
+
+                io.to(currentTarget).emit('chat message', {
+                    sender: populatedMessage.sender.username,
+                    message: populatedMessage.message,
+                    timestamp: populatedMessage.createdAt,
+                    target: currentTarget
+                });
+              } else {
+                // Private Message
+                const targetUser = await User.findOne({username: currentTarget});
+                if(!targetUser) return;
+
+                const newMessage = new Message({ sender: userId, recipient: targetUser._id, message });
+
+                await newMessage.save();
+
+                const populatedMessage = await Message.findById(newMessage._id).populate('sender', 'username');
+
+
+                // Send to both sender and receiver
+                socket.emit('chat message', {
+                    sender: populatedMessage.sender.username,
+                    message: populatedMessage.message,
+                    timestamp: populatedMessage.createdAt,
+                    target: currentTarget
+                });
+
+                const targetSocketId = Object.keys(io.sockets.sockets).find(key => {
+                  const s = io.sockets.sockets[key];
+                  return s.currentUsername === targetUser.username
+                });
+                if(targetSocketId) {
+                  io.to(targetSocketId).emit('chat message', {
+                    sender: populatedMessage.sender.username,
+                    message: populatedMessage.message,
+                    timestamp: populatedMessage.createdAt,
+                    target: currentUsername // Sender is the target for the recipient
+                  });
                 }
+              }
             }
 
-            // Beritahu klien lain
-            socket.broadcast.emit('user left', currentUsername);
-			io.emit('group list update', Object.keys(groups));
+        } catch (error) {
+            console.error("Error sending message:", error);
+            socket.emit('error message', 'Gagal mengirim pesan.');
+        }
+    });
+    socket.on('disconnect', async () => {
+        if (currentUsername) {
+          console.log(`${currentUsername} disconnected`);
+          socket.broadcast.emit('user left', currentUsername);
         }
     });
 });
-
-
 
 server.listen(PORT, () => {
     console.log(`Server berjalan di http://localhost:${PORT}`);
