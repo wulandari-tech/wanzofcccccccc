@@ -10,7 +10,7 @@ const io = new Server(server);
 const PORT = 3000;
 // GANTI INI DENGAN STRING KONEKSI MONGODB ANDA (JANGAN LAKUKAN INI DI APLIKASI NYATA!)
 // PASTIKAN SUDAH MENYERTAKAN NAMA DATABASE DI URL!!!
-const MONGODB_URI = 'mongodb+srv://zanssxploit:pISqUYgJJDfnLW9b@cluster0.fgram.mongodb.net?retryWrites=true&w=majority'; // GANTI!!!
+const MONGODB_URI = 'mongodb+srv://zanssxploit:pISqUYgJJDfnLW9b@cluster0.fgram.mongodb.net/?retryWrites=true&w=majority'; // GANTI!!!
 
 
 app.use(express.json());
