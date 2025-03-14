@@ -5,172 +5,230 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>wanzofc Chat</title>
     <style>
-        /* Styling CSS (langsung di dalam tag <style>) */
-        body {
-            font-family: sans-serif;
-            margin: 0;
-            padding: 0;
-            background-color: #f0f0f0;
-        }
-
-        h1 {
-            text-align: center;
-            padding: 20px;
-            background-color: #333;
-            color: white;
-            margin: 0;
-        }
-
-        #chat-container {
-            max-width: 800px;
-            margin: 30px auto;
-            background-color: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        }
-
-        #messages {
-            list-style: none;
-            padding: 0;
-        }
-
-        #messages li {
-            padding: 8px 12px;
-            margin-bottom: 4px;
-            border-radius: 4px;
-        }
-
-        #messages li.sender {
-            background-color: #dcf8c6;
-            text-align: right;
-        }
-
-        #messages li.receiver {
-            background-color: #f0f0f0;
-        }
-
-        #username-container{
-            margin-bottom: 1rem;
-            display: flex;
-        }
-         #username-input{
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-         }
-
-        #form {
-            display: flex;
-            margin-top: 20px;
-        }
-
-        #input {
-            flex: 1;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-        }
-
-        button {
-            padding: 10px 15px;
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-
-        button:hover {
-            background-color: #3e8e41;
-        }
-
-        .system-message {
-            font-style: italic;
-            color: #777;
-            text-align: center;
-            margin-bottom: 8px;
-        }
+        /* (Styling CSS - Sederhanakan, kamu bisa percantik nanti) */
+        body { font-family: sans-serif; margin: 0; padding: 0; background-color: #f0f0f0; }
+        h1 { text-align: center; padding: 20px; background-color: #333; color: white; margin: 0; }
+        #chat-container { max-width: 800px; margin: 30px auto; background-color: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); display: flex; }
+        #sidebar { width: 200px; border-right: 1px solid #ddd; padding-right: 20px; margin-right: 20px; }
+        #chat-area { flex: 1; }
+        #messages { list-style: none; padding: 0; }
+        #messages li { padding: 8px 12px; margin-bottom: 4px; border-radius: 4px; }
+        #messages li.sender { background-color: #dcf8c6; text-align: right; }
+        #messages li.receiver { background-color: #f0f0f0; }
+        #form { display: flex; margin-top: 20px; }
+        #input { flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 4px; }
+        button { padding: 10px 15px; background-color: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background-color: #3e8e41; }
+        .system-message { font-style: italic; color: #777; text-align: center; margin-bottom: 8px; }
+        #group-list, #user-list { list-style: none; padding: 0; }
+        #group-list li, #user-list li { padding: 5px; cursor: pointer; }
+        #group-list li.active, #user-list li.active { background-color: #ddd; }
+        #create-group-form {margin-bottom: 1rem;}
+        #username-container{ margin-bottom: 1rem; }
+        #chat-title {margin-top: 0;}
     </style>
 </head>
 <body>
     <h1>wanzofc Chat</h1>
-
     <div id="username-container">
         <input type="text" id="username-input" placeholder="Masukkan nama Anda" />
-        <button id="username-button">Set Nama</button>
+        <button id="username-button">create username</button>
     </div>
 
     <div id="chat-container" style="display: none;">
-        <ul id="messages"></ul>
-        <form id="form" action="">
-            <input id="input" autocomplete="off" /><button>Kirim</button>
-        </form>
+        <div id="sidebar">
+            <form id="create-group-form">
+                <input type="text" id="group-name-input" placeholder="Nama Grup Baru" />
+                <button>Create group</button>
+            </form>
+            <h3>Group</h3>
+            <ul id="group-list"></ul>
+            <h3>User</h3>
+            <ul id="user-list"></ul>
+        </div>
+        <div id="chat-area">
+            <h2 id="chat-title"></h2>
+            <ul id="messages"></ul>
+            <form id="form" action="">
+                <input id="input" autocomplete="off" /><button>Kirim</button>
+            </form>
+        </div>
     </div>
-
     <script src="/socket.io/socket.io.js"></script>
     <script>
-        // Kode JavaScript (langsung di dalam tag <script>)
         const socket = io();
 
         const usernameInput = document.getElementById('username-input');
         const usernameButton = document.getElementById('username-button');
         const usernameContainer = document.getElementById('username-container');
         const chatContainer = document.getElementById('chat-container');
-
+        const createGroupForm = document.getElementById('create-group-form');
+        const groupNameInput = document.getElementById('group-name-input');
+        const groupList = document.getElementById('group-list');
+        const userList = document.getElementById('user-list');
+        const chatTitle = document.getElementById('chat-title');
         const messages = document.getElementById('messages');
         const form = document.getElementById('form');
         const input = document.getElementById('input');
 
+
         let username = '';
+        let currentTarget = null; // Nama grup atau username yang sedang diajak chat
+
+        // --- Event Handlers ---
 
         usernameButton.addEventListener('click', () => {
             if (usernameInput.value.trim() !== '') {
                 username = usernameInput.value.trim();
                 usernameContainer.style.display = 'none';
-                chatContainer.style.display = 'block';
+                chatContainer.style.display = 'flex'; // Menggunakan flexbox
                 socket.emit('user joined', username);
+            }
+        });
+
+        createGroupForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const groupName = groupNameInput.value.trim();
+            if (groupName) {
+                socket.emit('create group', groupName);
+                groupNameInput.value = '';
             }
         });
 
         form.addEventListener('submit', (e) => {
             e.preventDefault();
-            if (input.value && username) {
-                socket.emit('chat message', { username: username, message: input.value });
+            if (input.value.trim() && currentTarget) {
+                socket.emit('chat message', { message: input.value.trim() });
                 input.value = '';
             }
         });
 
-        socket.on('chat message', (data) => {
-            const item = document.createElement('li');
-            item.textContent = `${data.username}: ${data.message}`;
 
-             if (data.username === username) {
+        // --- Socket.IO Event Listeners ---
+
+        socket.on('initial data', (data) => {
+            updateUserList(data.users);
+            updateGroupList(data.groups);
+            // data.privateMessages tidak di-handle di sini
+        });
+
+        socket.on('user joined', (joinedUsername) => {
+          addUserToList(joinedUsername); // Tambahkan user ke daftar
+          addSystemMessage(`${joinedUsername} telah bergabung!`);
+        });
+
+        socket.on('user left', (leftUsername) => {
+          removeUserFromList(leftUsername);
+          addSystemMessage(`${leftUsername} telah keluar!`);
+        });
+
+
+        socket.on('group list update', (groups) => {
+            updateGroupList(groups);
+        });
+
+        socket.on('chat message', (data) => {
+            displayMessage(data);
+        });
+
+        socket.on('chat history', (data) => {
+            messages.innerHTML = ''; // Bersihkan pesan sebelumnya
+            data.messages.forEach(displayMessage);
+            messages.scrollTop = messages.scrollHeight;
+        });
+
+
+        // --- Helper Functions ---
+        function updateUserList(users) {
+            userList.innerHTML = '';
+            users.forEach(user => addUserToList(user));
+        }
+        function addUserToList(user) {
+             const li = document.createElement('li');
+            li.textContent = user;
+            li.addEventListener('click', () => startPrivateChat(user));
+            userList.appendChild(li);
+        }
+
+        function removeUserFromList(user) {
+          const userElement = Array.from(userList.children).find(li => li.textContent === user);
+          if (userElement) {
+            userList.removeChild(userElement);
+          }
+        }
+
+        function updateGroupList(groups) {
+            groupList.innerHTML = '';
+            groups.forEach(group => {
+                const li = document.createElement('li');
+                li.textContent = group;
+                li.addEventListener('click', () => joinGroup(group));
+                groupList.appendChild(li);
+            });
+        }
+
+        function joinGroup(groupName) {
+            currentTarget = groupName;
+            chatTitle.textContent = `Grup: ${groupName}`;
+            socket.emit('join group', groupName);
+            clearActiveSelection();
+            // Cari elemen grup dan tambahkan class 'active'
+           const groupElement = Array.from(groupList.children).find(li => li.textContent === groupName);
+            if(groupElement) {
+                groupElement.classList.add('active');
+            }
+
+        }
+
+        function startPrivateChat(targetUser) {
+            currentTarget = targetUser;
+            chatTitle.textContent = `Chat dengan ${targetUser}`;
+            socket.emit('start private chat', targetUser);
+            clearActiveSelection();
+            const userElement = Array.from(userList.children).find(li => li.textContent === targetUser);
+            if(userElement) {
+              userElement.classList.add('active');
+            }
+
+        }
+
+        function clearActiveSelection() {
+          // Hapus class 'active' dari semua item di daftar grup dan pengguna
+          Array.from(groupList.children).forEach(li => li.classList.remove('active'));
+          Array.from(userList.children).forEach(li => li.classList.remove('active'));
+        }
+
+
+        function displayMessage(data) {
+           const item = document.createElement('li');
+            const senderText = data.sender === username ? 'Anda' : data.sender;
+
+            // Format timestamp (contoh sederhana)
+            const time = new Date(data.timestamp);
+            const timeString = time.toLocaleTimeString(); // Format waktu lokal
+
+             // Tampilkan target jika ada
+            const targetPrefix = data.target ? `[${data.target}] ` : '';
+
+            item.textContent = `${targetPrefix}${senderText}: ${data.message} (${timeString})`;
+
+
+            if (data.sender === username) {
                 item.classList.add('sender');
             } else {
                 item.classList.add('receiver');
             }
-
             messages.appendChild(item);
             messages.scrollTop = messages.scrollHeight;
-        });
+        }
 
-        socket.on('user joined', (joinedUsername) => {
+        function addSystemMessage(message) {
             const item = document.createElement('li');
-            item.textContent = `${joinedUsername} telah bergabung!`;
-            item.classList.add('system-message'); // Gaya untuk pesan sistem
+            item.textContent = message;
+            item.classList.add('system-message');
             messages.appendChild(item);
             messages.scrollTop = messages.scrollHeight;
-        });
-
-        // Tambahan: Tangani user disconnected
-        socket.on('user left', (leftUsername) => {
-          const item = document.createElement('li');
-          item.textContent = `${leftUsername} telah keluar!`;
-          item.classList.add('system-message');
-          messages.appendChild(item);
-          messages.scrollTop = messages.scrollHeight;
-        });
+        }
 
     </script>
 </body>
