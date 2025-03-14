@@ -1,315 +1,671 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>wanzofc Chat</title>
+    <title>Wanzofc Chat</title>
     <style>
-        /* (Styling CSS - Sederhanakan, kamu bisa percantik nanti) */
-        body { font-family: sans-serif; margin: 0; padding: 0; background-color: #f0f0f0; }
-        h1 { text-align: center; padding: 20px; background-color: #333; color: white; margin: 0; }
-        #auth-container, #chat-container { max-width: 800px; margin: 30px auto; background-color: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);}
-        #chat-container {display: none;}
-        #chat-container.active { display: flex; }
-        #sidebar { width: 200px; border-right: 1px solid #ddd; padding-right: 20px; margin-right: 20px; }
-        #chat-area { flex: 1; }
-        #messages { list-style: none; padding: 0; }
-        #messages li { padding: 8px 12px; margin-bottom: 4px; border-radius: 4px; }
-        #messages li.sender { background-color: #dcf8c6; text-align: right; }
-        #messages li.receiver { background-color: #f0f0f0; }
-        #form { display: flex; margin-top: 20px; }
-        #input { flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 4px; }
-        button { padding: 10px 15px; background-color: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; }
-        button:hover { background-color: #3e8e41; }
-        .system-message { font-style: italic; color: #777; text-align: center; margin-bottom: 8px; }
-        #group-list, #user-list { list-style: none; padding: 0; }
-        #group-list li, #user-list li { padding: 5px; cursor: pointer; }
-        #group-list li.active, #user-list li.active { background-color: #ddd; }
-        #create-group-form {margin-bottom: 1rem;}
-        #auth-forms > div { margin-bottom: 15px; } /* Spacing between auth forms */
-        #chat-title {margin-top: 0;}
-        #error-message {color: red;}
+        /* CSS Reset (Minimal) */
+        body,
+        h1,
+        h2,
+        p,
+        ul,
+        li,
+        input,
+        button {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #121212;
+            color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Header */
+        .header {
+            background-color: #1f1f1f;
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #333;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            font-weight: 600;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        #createGroupBtn{
+            background: none;
+            border: none;
+        }
+
+        #usernameDisplay {
+            font-weight: bold;
+        }
+
+        #logoutBtn, #createGroupBtn {
+            background-color: #3498db;
+            color: #fff;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+      
+
+        #logoutBtn:hover, #createGroupBtn:hover {
+            background-color: #2980b9;
+        }
+
+        /* Main Container */
+        .main-container {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        /* Sidebar (User List / Group List) */
+        .sidebar {
+            width: 250px;
+            background-color: #2c2c2c;
+            border-right: 1px solid #444;
+            overflow-y: auto;
+        }
+
+        .sidebar h2 {
+            padding: 10px 15px;
+            border-bottom: 1px solid #444;
+            font-size: 18px;
+            color: #aaa;
+        }
+
+        .sidebar ul {
+            list-style: none;
+        }
+
+        .sidebar li {
+            padding: 12px 15px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            border-bottom: 1px solid #333;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .sidebar li:hover {
+            background-color: #3a3a3a;
+        }
+
+        .sidebar li.active {
+            background-color: #3498db;
+            color: #fff;
+        }
+        .sidebar li.active .unread-count {
+            background-color: #fff;
+            color: #3498db;
+        }
+
+
+        .unread-count {
+            background-color: #e74c3c;
+            color: #fff;
+            border-radius: 50%;
+            padding: 2px 6px;
+            font-size: 12px;
+        }
+
+        /* Chat Area */
+        .chat-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* Chat Header */
+        .chat-header {
+            background-color: #2c2c2c;
+            padding: 10px 15px;
+            border-bottom: 1px solid #444;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        #currentRecipient {
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+        /* Chat Messages */
+
+        #messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            /*  align-items: flex-start;  (default) */
+        }
+        .message-wrapper{
+           width: 100%;
+           display: flex;
+
+           margin-bottom: 8px;
+        }
+        .message-wrapper.own-message{
+            justify-content: flex-end;
+        }
+        .message {
+            max-width: 70%;
+            padding: 10px 15px;
+            border-radius: 15px;
+            background-color: #3a3a3a;
+            color: #fff;
+            word-wrap: break-word; /* Agar teks panjang tidak keluar dari container */
+            position: relative; /* Untuk bubble tail */
+
+        }
+
+        .message.own-message {
+            background-color: #3498db;
+            /*  align-self: flex-end;  (Pindahkan ke kanan) */
+        }
+
+        /* Bubble Tail */
+        .message::before {
+            content: '';
+            position: absolute;
+            top: 10px;
+            width: 0;
+            height: 0;
+            border-style: solid;
+            border-color: transparent;
+        }
+        /*  .own-message::before{
+            right: -10px;
+            border-width: 10px 0 10px 10px;
+            border-left-color: #3498db;
+        } */
+
+        .message:not(.own-message)::before {
+            left: -10px;
+            border-width: 10px 10px 10px 0;
+            border-right-color: #3a3a3a;
+        }
+
+        /* Message Meta (Timestamp, Sender -  optional) */
+        .message-meta {
+            font-size: 12px;
+            color: #aaa;
+            margin-top: 3px;
+        }
+
+        /* Input Area */
+        .input-area {
+            display: flex;
+            padding: 10px;
+            border-top: 1px solid #444;
+            background-color: #2c2c2c;
+        }
+
+        #messageInput {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            background-color: #3a3a3a;
+            color: #fff;
+            margin-right: 10px;
+            outline: none;
+        }
+
+        #sendBtn {
+            background-color: #3498db;
+            color: #fff;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        #sendBtn:hover {
+            background-color: #2980b9;
+        }
+        /* Modal Styles */
+        .modal {
+            display: none; /* Hidden by default */
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.7);
+        }
+
+        .modal-content {
+            background-color: #2c2c2c;
+            margin: 15% auto;
+            padding: 20px;
+            border-radius: 10px;
+            width: 80%;
+            max-width: 400px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            position: relative; /* For close button */
+        }
+        .modal-content h2{
+            margin-bottom: 1rem;
+        }
+
+        .close-modal {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            font-size: 24px;
+            cursor: pointer;
+            color: #aaa;
+        }
+        .close-modal:hover{
+            color: #fff
+        }
+
+        .modal-input {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #444;
+            border-radius: 5px;
+            background-color: #3a3a3a;
+            color: #fff;
+            outline: none;
+        }
+
+        .modal-button {
+            background-color: #3498db;
+            color: #fff;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            width: 100%;
+            transition: background-color 0.2s;
+        }
+
+        .modal-button:hover {
+            background-color: #2980b9;
+        }
+
+        #groupError, #groupSuccess{
+          padding: .5rem;
+          border-radius: .5rem;
+          margin-bottom: .5rem;
+          display: none;
+        }
+         #groupError{
+            background-color: #e74c3c;
+            color: #fff;
+        }
+        #groupSuccess{
+            background-color: #2ecc71;
+            color: #fff;
+
+        }
+
     </style>
 </head>
+
 <body>
-    <h1>wanzofc Chat</h1>
-
-    <div id="auth-container">
-        <div id="auth-forms">
-            <!-- Signup Form -->
-            <div id="signup-form">
-                <h2>Signup</h2>
-                <input type="text" id="signup-username" placeholder="Username" required />
-                <input type="password" id="signup-password" placeholder="Password" required />
-                <button id="signup-button">Sign Up</button>
-            </div>
-
-            <!-- Login Form -->
-            <div id="login-form">
-                <h2>Login</h2>
-                <input type="text" id="login-username" placeholder="Username" required />
-                <input type="password" id="login-password" placeholder="Password" required />
-                <button id="login-button">Login</button>
-            </div>
-             <div id="error-message"></div>
+    <div class="header">
+        <h1>Wanzofc Chat</h1>
+        <div class="user-info">
+            <span id="usernameDisplay"></span>
+             <button id="createGroupBtn"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-users"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg></button>
+            <button id="logoutBtn">Logout</button>
         </div>
     </div>
 
-    <div id="chat-container">
-        <div id="sidebar">
-            <form id="create-group-form">
-                <input type="text" id="group-name-input" placeholder="Nama Grup Baru" />
-                <button>Buat Grup</button>
-            </form>
-            <h3>Grup</h3>
-            <ul id="group-list"></ul>
-            <h3>Pengguna</h3>
-            <ul id="user-list"></ul>
+    <div class="main-container">
+        <div class="sidebar">
+            <h2>Users</h2>
+            <ul id="userList"></ul>
+            <h2>Groups</h2>
+            <ul id="groupList">
+              <li data-group="general" class="active">
+                #general
+              </li>
+            </ul>
         </div>
-        <div id="chat-area">
-            <h2 id="chat-title"></h2>
-            <ul id="messages"></ul>
-            <form id="form" action="">
-                <input id="input" autocomplete="off" /><button>Kirim</button>
-            </form>
+        <div class="chat-area">
+            <div class="chat-header">
+                <span id="currentRecipient">#general</span>
+            </div>
+            <div id="messages">
+            </div>
+            <div class="input-area">
+                <input type="text" id="messageInput" placeholder="Type your message...">
+                <button id="sendBtn">Send</button>
+            </div>
         </div>
     </div>
+
+    <!-- Modal for Username -->
+    <div id="usernameModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal">×</span>
+            <h2>Enter Username</h2>
+            <input type="text" id="usernameInput" class="modal-input" placeholder="Username">
+            <button id="usernameSubmit" class="modal-button">Join Chat</button>
+        </div>
+    </div>
+    <!-- Modal Create Group -->
+      <div id="createGroupModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal">×</span>
+            <h2>Create Group</h2>
+            <div id="groupError"></div>
+             <div id="groupSuccess"></div>
+            <input type="text" id="groupNameInput" class="modal-input" placeholder="Group Name">
+            <button id="createGroupSubmit" class="modal-button">Create</button>
+        </div>
+    </div>
+
     <script src="/socket.io/socket.io.js"></script>
     <script>
+        const socket = io();
 
-      const socket = io();
+        // DOM Elements
+        const usernameModal = document.getElementById('usernameModal');
+        const usernameInput = document.getElementById('usernameInput');
+        const usernameSubmit = document.getElementById('usernameSubmit');
+        const usernameDisplay = document.getElementById('usernameDisplay');
+        const logoutBtn = document.getElementById('logoutBtn');
+        const userList = document.getElementById('userList');
+        const groupList = document.getElementById('groupList');
+        const messages = document.getElementById('messages');
+        const messageInput = document.getElementById('messageInput');
+        const sendBtn = document.getElementById('sendBtn');
+        const currentRecipientDisplay = document.getElementById('currentRecipient');
+        const createGroupBtn = document.getElementById("createGroupBtn")
+        const createGroupModal = document.getElementById("createGroupModal")
+        const groupNameInput = document.getElementById("groupNameInput")
+        const createGroupSubmit = document.getElementById("createGroupSubmit")
+        const groupError = document.getElementById("groupError")
+        const groupSuccess = document.getElementById("groupSuccess")
 
-      // --- DOM Elements ---
-      // Auth
-      const authContainer = document.getElementById('auth-container');
-      const signupUsernameInput = document.getElementById('signup-username');
-      const signupPasswordInput = document.getElementById('signup-password');
-      const signupButton = document.getElementById('signup-button');
-      const loginUsernameInput = document.getElementById('login-username');
-      const loginPasswordInput = document.getElementById('login-password');
-      const loginButton = document.getElementById('login-button');
-      const errorMessageDiv = document.getElementById('error-message');
 
-      // Chat
-      const chatContainer = document.getElementById('chat-container');
-      const createGroupForm = document.getElementById('create-group-form');
-      const groupNameInput = document.getElementById('group-name-input');
-      const groupList = document.getElementById('group-list');
-      const userList = document.getElementById('user-list');
-      const chatTitle = document.getElementById('chat-title');
-      const messages = document.getElementById('messages');
-      const form = document.getElementById('form');
-      const input = document.getElementById('input');
+        let currentUser = null;
+        let currentRecipient = 'general'; // Default to general
+        let currentChatType = 'group'; // 'private' or 'group'
 
-      let userId = null;
-      let username = null;
-      let currentTarget = null;
+        // Show Username Modal on Load
+        usernameModal.style.display = 'block';
 
-      // --- Event Handlers ---
-
-      // Signup
-      signupButton.addEventListener('click', async () => {
-          const username = signupUsernameInput.value.trim();
-          const password = signupPasswordInput.value.trim();
-
-          if (username && password) {
-              try {
-                  const response = await fetch('/signup', {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' }, // Penting: Set Content-Type
-                      body: JSON.stringify({ username, password })  // Penting: Kirim sebagai JSON
-                  });
-                  const data = await response.json();
-                  if (response.ok) {
-                      userId = data.userId; // Simpan userId setelah signup
-                      username = username;
-                      showChat();
-
-                  } else {
-                      showError(data.message || 'Signup failed');
-                  }
-              } catch (error) {
-                  console.error("Signup error:", error);
-                  showError('Signup failed');
-              }
-          }
-      });
-
-      // Login
-      loginButton.addEventListener('click', async () => {
-          const username = loginUsernameInput.value.trim();
-          const password = loginPasswordInput.value.trim();
-
-          if (username && password) {
-              try {
-                  const response = await fetch('/login', {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },  // Penting: Set Content-Type
-                      body: JSON.stringify({ username, password })     // Penting: Kirim sebagai JSON
-                  });
-                  const data = await response.json();
-                  if (response.ok) {
-                      userId = data.userId; // Simpan userId setelah login
-                      username = username;
-                      showChat();
-
-                  } else {
-                      showError(data.message || 'Login failed');
-                  }
-
-              } catch (error) {
-                console.error("Login error", error);
-                showError('Login failed');
-              }
-          }
-      });
-
-      createGroupForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            const groupName = groupNameInput.value.trim();
-            if (groupName) {
-                socket.emit('create group', {groupName, userId});
-                groupNameInput.value = '';
+        // Event: Handle Username Submission
+        usernameSubmit.addEventListener('click', () => {
+            const username = usernameInput.value.trim();
+            if (username) {
+                socket.emit('registerUsername', username);
             }
         });
 
-        form.addEventListener('submit', (e) => {
-            e.preventDefault();
-            if (input.value.trim() && currentTarget) {
-                socket.emit('chat message', { message: input.value.trim(), userId });
-                input.value = '';
-            }
+        // Event: Username Taken
+        socket.on('usernameTaken', () => {
+            alert('Username is already taken.  Please choose another.');
         });
 
-        // --- Socket.IO Event Listeners ---
-        socket.on('initial data', (data) => {
-            updateUserList(data.users);
-            updateGroupList(data.groups);
+        // Event: Username Registered Successfully
+        socket.on('usernameRegistered', (username) => {
+            currentUser = username;
+            usernameDisplay.textContent = currentUser;
+            usernameModal.style.display = 'none';
+            messageInput.focus(); // Focus on input
         });
 
-        socket.on('user joined', (joinedUsername) => {
-            addUserToList(joinedUsername);
-            addSystemMessage(`${joinedUsername} telah bergabung!`);
+        // Event: Logout
+        logoutBtn.addEventListener('click', () => {
+            socket.emit('logout');
+            currentUser = null;
+            usernameDisplay.textContent = '';
+            userList.innerHTML = ''; // Clear user list
+            groupList.innerHTML = `<li data-group="general" class="active">#general</li>`; // Reset group list
+            messages.innerHTML = ''; // Clear messages
+            currentRecipient = 'general';
+            currentChatType = 'group';
+            currentRecipientDisplay.textContent = '#general';
+            usernameModal.style.display = 'block'; // Show username modal again
         });
 
-        socket.on('user left', (leftUsername) => {
-          removeUserFromList(leftUsername);
-          addSystemMessage(`${leftUsername} telah keluar!`);
-        });
 
-        socket.on('group list update', (groups) => {
-           updateGroupList(groups);
+        // Event:  Update Online User List
+        socket.on('onlineUsers', (users) => {
+           renderUserList(users)
         });
-        socket.on('chat message', (data) => {
-            displayMessage(data);
-        });
-
-        socket.on('chat history', (data) => {
-          messages.innerHTML = '';
-          data.messages.forEach(displayMessage);
-          messages.scrollTop = messages.scrollHeight;
-        });
-        socket.on('error message', (message) => {
-          showError(message); // Menampilkan pesan error
-        })
-
-        // --- Helper Functions ---
-        function updateUserList(users) {
-          userList.innerHTML = '';
-          users.forEach(user => addUserToList(user));
-        }
-        function addUserToList(user) {
-            const li = document.createElement('li');
-            li.textContent = user;
-            li.addEventListener('click', () => startPrivateChat(user));
-            userList.appendChild(li);
-        }
-        function removeUserFromList(user){
-          const userElement = Array.from(userList.children).find(li => li.textContent === user);
-          if(userElement) {
-            userList.removeChild(userElement);
-          }
-        }
-
-        function updateGroupList(groups) {
-          groupList.innerHTML = '';
-            groups.forEach(group => {
-                const li = document.createElement('li');
-                li.textContent = group;
-                li.addEventListener('click', () => joinGroup(group));
-                groupList.appendChild(li);
+        function renderUserList(users){
+             userList.innerHTML = ''; // Clear current list
+            users.forEach(user => {
+                if (user !== currentUser) { // Don't show self
+                    const li = document.createElement('li');
+                    li.textContent = user;
+                    li.dataset.username = user; // Store username for later
+                    li.addEventListener('click', startPrivateChat);
+                    userList.appendChild(li);
+                }
             });
         }
 
-        function joinGroup(groupName) {
-            currentTarget = groupName;
-            chatTitle.textContent = `Grup: ${groupName}`;
-            socket.emit('join group', {groupName, userId});
-            clearActiveSelection();
-            // Find group element and add 'active' class
-            const groupElement = Array.from(groupList.children).find(li => li.textContent === groupName);
-            if(groupElement) {
-              groupElement.classList.add('active');
+
+        // Event: Start Private Chat (Click on User)
+        function startPrivateChat() {
+            const recipient = this.dataset.username;
+            currentRecipient = recipient;
+            currentChatType = 'private';
+            currentRecipientDisplay.textContent = recipient;
+            messages.innerHTML = ''; // Clear current messages
+            // Request private chat history from server
+            socket.emit('requestPrivateChatHistory', recipient);
+            setActiveListItem(this); // Tambahkan class 'active'
+        }
+
+        function setActiveListItem(activeItem){
+              // Remove 'active' class from all list items
+            const allItems = document.querySelectorAll('.sidebar li');
+            allItems.forEach(item => item.classList.remove('active'));
+             // Add 'active' class to the clicked item
+            activeItem.classList.add('active');
+        }
+
+        // Event:  Receive Private Message
+        socket.on('privateMessage', (data) => {
+          //  if (currentChatType === 'private' && (data.sender === currentRecipient || data.recipient === currentRecipient)) {
+                appendMessage(data);
+          //  }
+        });
+
+        // Event: Receive Group Message
+        socket.on('groupMessage', (data) => {
+           // if (currentChatType === 'group' && data.groupName === currentRecipient) {
+                appendMessage(data);
+          //  }
+        });
+
+      socket.on('groupChatHistory', (history) => {
+            messages.innerHTML = ''; // Clear existing messages
+            history.forEach(msg => appendMessage(msg));
+            messages.scrollTop = messages.scrollHeight; // Scroll to bottom
+        });
+
+        socket.on('privateChatHistory', (history) => {
+          messages.innerHTML = ''; // Clear existing messages
+          history.forEach(msg => appendMessage(msg));
+          messages.scrollTop = messages.scrollHeight;
+        })
+
+        // Event: Send Message (Click or Enter)
+        sendBtn.addEventListener('click', sendMessage);
+        messageInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                sendMessage();
             }
+        });
 
-        }
+        function sendMessage() {
+            const message = messageInput.value.trim();
+            if (!message) return;
 
-        function startPrivateChat(targetUser) {
-            currentTarget = targetUser;
-            chatTitle.textContent = `Chat dengan ${targetUser}`;
-            socket.emit('start private chat', {targetUser, userId});
-            clearActiveSelection();
-            const userElement = Array.from(userList.children).find(li => li.textContent === targetUser);
-            if(userElement){
-              userElement.classList.add('active');
-            }
-        }
-        function clearActiveSelection(){
-          Array.from(groupList.children).forEach(li => li.classList.remove('active'));
-          Array.from(userList.children).forEach(li => li.classList.remove('active'));
-        }
-
-        function displayMessage(data) {
-           const item = document.createElement('li');
-            const senderText = data.sender === username ? 'Anda' : data.sender;
-
-            // Format timestamp (contoh sederhana)
-            const time = new Date(data.timestamp);
-            const timeString = time.toLocaleTimeString();
-
-             // Tampilkan target jika ada
-            const targetPrefix = data.target ? `[${data.target}] ` : '';
-
-            item.textContent = `${targetPrefix}${senderText}: ${data.message} (${timeString})`;
-
-            if (data.sender === username) {
-                item.classList.add('sender');
+            if (currentChatType === 'private') {
+                socket.emit('privateMessage', { recipient: currentRecipient, message });
             } else {
-                item.classList.add('receiver');
+                socket.emit('groupMessage', { groupName: currentRecipient, message });
             }
-            messages.appendChild(item);
-            messages.scrollTop = messages.scrollHeight;
-        }
-        function addSystemMessage(message) {
-            const item = document.createElement('li');
-            item.textContent = message;
-            item.classList.add('system-message');
-            messages.appendChild(item);
-            messages.scrollTop = messages.scrollHeight;
+
+            messageInput.value = ''; // Clear input
         }
 
-        function showChat() {
-            authContainer.style.display = 'none';
-            chatContainer.classList.add('active');
-            socket.emit('user joined', { userId, username }); // Kirim userId dan username
+
+        function appendMessage(data) {
+           // console.log("append", data)
+            const messageWrapper = document.createElement('div');
+            messageWrapper.classList.add("message-wrapper")
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('message');
+
+            if (data.sender === currentUser) {
+                messageWrapper.classList.add('own-message');
+            }
+
+            let text = '';
+            if(currentChatType === 'group' && data.sender !== currentUser) {
+                text += `<strong>${data.sender}: </strong>`;
+            }
+            text += data.message;
+
+            messageDiv.innerHTML = text;
+
+            const metaDiv = document.createElement('div');
+            metaDiv.classList.add('message-meta');
+            metaDiv.textContent = new Date(data.timestamp).toLocaleTimeString();
+            messageDiv.appendChild(metaDiv);
+            messageWrapper.appendChild(messageDiv)
+
+            messages.appendChild(messageWrapper);
+            messages.scrollTop = messages.scrollHeight; // Scroll to bottom
         }
-      function showError(message){
-        errorMessageDiv.textContent = message;
-        setTimeout(()=> {
-          errorMessageDiv.textContent = '';
-        }, 5000) // Sembunyikan setelah 5 detik
-      }
+
+        // Event: Group Creation (Modal)
+
+        createGroupBtn.addEventListener("click", () => {
+            createGroupModal.style.display = "block";
+        })
+
+        createGroupSubmit.addEventListener("click", () => {
+          const groupName = groupNameInput.value.trim()
+          socket.emit("createGroup", groupName)
+
+        })
+
+        socket.on("groupError", (message) => {
+          groupError.style.display = "block"
+          groupError.textContent = message
+          setTimeout(()=> {
+            groupError.style.display = "none"
+          }, 3000)
+        })
+        socket.on('groupExists', (groupName) => {
+            groupError.style.display = 'block';
+            groupError.textContent = `Group "${groupName}" already exists.`;
+             setTimeout(()=> {
+                groupError.style.display = "none"
+              }, 3000)
+        });
+
+        socket.on('groupCreated', (groupName) => {
+            groupSuccess.style.display = 'block';
+            groupSuccess.textContent = `Group "${groupName}" created successfully!`;
+             setTimeout(()=> {
+                groupSuccess.style.display = "none"
+                createGroupModal.style.display = 'none'; // Hide modal
+                groupNameInput.value = '';
+              }, 3000)
+            joinGroup(groupName)
+        });
+         socket.on('groupListUpdate', (groupNames) => {
+            renderGroupList(groupNames);
+        });
+
+        function renderGroupList(groupNames){
+           groupList.innerHTML = `<li data-group="general" class="${currentRecipient === 'general' ? 'active' : ''}">#general</li>`;  //Keep General
+            groupNames.forEach(groupName => {
+                if (groupName !== 'general') { // Don't duplicate general
+                    const li = document.createElement('li');
+                    li.textContent = `#${groupName}`;
+                    li.dataset.group = groupName;
+                     if (groupName === currentRecipient) {
+                        li.classList.add('active');
+                    }
+                    li.addEventListener('click', () => joinGroup(groupName));
+                    groupList.appendChild(li);
+                }
+            });
+        }
+
+          // Event: Join Group (Click on Group)
+        function joinGroup(groupName) {
+            currentRecipient = groupName;
+            currentChatType = 'group';
+            currentRecipientDisplay.textContent = `#${groupName}`;
+            messages.innerHTML = ''; // Clear messages
+            socket.emit('joinGroup', groupName);
+            // Find the list item and set it as active
+            const listItem = document.querySelector(`.sidebar li[data-group="${groupName}"]`);
+            if(listItem) {
+                setActiveListItem(listItem);
+            }
+
+        }
+        socket.on('joinedGroup', (groupName) => {
+            console.log(`Joined group: ${groupName}`);
+            // You can update UI here (e.g., highlight the joined group)
+        });
+
+
+        // Close Modal Event
+        document.querySelectorAll('.close-modal').forEach(closeBtn => {
+            closeBtn.addEventListener('click', () => {
+                closeBtn.closest('.modal').style.display = 'none';
+                 groupNameInput.value = '';
+                 groupError.style.display = "none"
+                 groupSuccess.style.display = "none"
+            });
+        });
+          // Close modal if clicked outside
+        window.addEventListener('click', (event) => {
+            if (event.target.classList.contains('modal')) {
+                event.target.style.display = 'none';
+                groupNameInput.value = '';
+                groupError.style.display = "none";
+                groupSuccess.style.display = "none"
+            }
+        });
 
     </script>
 </body>
+
 </html>
