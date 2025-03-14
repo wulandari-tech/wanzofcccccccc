@@ -8,7 +8,9 @@
         /* (Styling CSS - Sederhanakan, kamu bisa percantik nanti) */
         body { font-family: sans-serif; margin: 0; padding: 0; background-color: #f0f0f0; }
         h1 { text-align: center; padding: 20px; background-color: #333; color: white; margin: 0; }
-        #chat-container { max-width: 800px; margin: 30px auto; background-color: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); display: flex; }
+        #auth-container, #chat-container { max-width: 800px; margin: 30px auto; background-color: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);}
+        #chat-container {display: none;}
+        #chat-container.active { display: flex; }
         #sidebar { width: 200px; border-right: 1px solid #ddd; padding-right: 20px; margin-right: 20px; }
         #chat-area { flex: 1; }
         #messages { list-style: none; padding: 0; }
@@ -24,26 +26,44 @@
         #group-list li, #user-list li { padding: 5px; cursor: pointer; }
         #group-list li.active, #user-list li.active { background-color: #ddd; }
         #create-group-form {margin-bottom: 1rem;}
-        #username-container{ margin-bottom: 1rem; }
+        #auth-forms > div { margin-bottom: 15px; } /* Spacing between auth forms */
         #chat-title {margin-top: 0;}
+        #error-message {color: red;}
     </style>
 </head>
 <body>
     <h1>wanzofc Chat</h1>
-    <div id="username-container">
-        <input type="text" id="username-input" placeholder="Masukkan nama Anda" />
-        <button id="username-button">create username</button>
+
+    <div id="auth-container">
+        <div id="auth-forms">
+            <!-- Signup Form -->
+            <div id="signup-form">
+                <h2>Signup</h2>
+                <input type="text" id="signup-username" placeholder="Username" required />
+                <input type="password" id="signup-password" placeholder="Password" required />
+                <button id="signup-button">Sign Up</button>
+            </div>
+
+            <!-- Login Form -->
+            <div id="login-form">
+                <h2>Login</h2>
+                <input type="text" id="login-username" placeholder="Username" required />
+                <input type="password" id="login-password" placeholder="Password" required />
+                <button id="login-button">Login</button>
+            </div>
+             <div id="error-message"></div>
+        </div>
     </div>
 
-    <div id="chat-container" style="display: none;">
+    <div id="chat-container">
         <div id="sidebar">
             <form id="create-group-form">
                 <input type="text" id="group-name-input" placeholder="Nama Grup Baru" />
-                <button>Create group</button>
+                <button>Buat Grup</button>
             </form>
-            <h3>Group</h3>
+            <h3>Grup</h3>
             <ul id="group-list"></ul>
-            <h3>User</h3>
+            <h3>Pengguna</h3>
             <ul id="user-list"></ul>
         </div>
         <div id="chat-area">
@@ -56,41 +76,99 @@
     </div>
     <script src="/socket.io/socket.io.js"></script>
     <script>
-        const socket = io();
 
-        const usernameInput = document.getElementById('username-input');
-        const usernameButton = document.getElementById('username-button');
-        const usernameContainer = document.getElementById('username-container');
-        const chatContainer = document.getElementById('chat-container');
-        const createGroupForm = document.getElementById('create-group-form');
-        const groupNameInput = document.getElementById('group-name-input');
-        const groupList = document.getElementById('group-list');
-        const userList = document.getElementById('user-list');
-        const chatTitle = document.getElementById('chat-title');
-        const messages = document.getElementById('messages');
-        const form = document.getElementById('form');
-        const input = document.getElementById('input');
+      const socket = io();
 
+      // --- DOM Elements ---
+      // Auth
+      const authContainer = document.getElementById('auth-container');
+      const signupUsernameInput = document.getElementById('signup-username');
+      const signupPasswordInput = document.getElementById('signup-password');
+      const signupButton = document.getElementById('signup-button');
+      const loginUsernameInput = document.getElementById('login-username');
+      const loginPasswordInput = document.getElementById('login-password');
+      const loginButton = document.getElementById('login-button');
+      const errorMessageDiv = document.getElementById('error-message');
 
-        let username = '';
-        let currentTarget = null; // Nama grup atau username yang sedang diajak chat
+      // Chat
+      const chatContainer = document.getElementById('chat-container');
+      const createGroupForm = document.getElementById('create-group-form');
+      const groupNameInput = document.getElementById('group-name-input');
+      const groupList = document.getElementById('group-list');
+      const userList = document.getElementById('user-list');
+      const chatTitle = document.getElementById('chat-title');
+      const messages = document.getElementById('messages');
+      const form = document.getElementById('form');
+      const input = document.getElementById('input');
 
-        // --- Event Handlers ---
+      let userId = null;
+      let username = null;
+      let currentTarget = null;
 
-        usernameButton.addEventListener('click', () => {
-            if (usernameInput.value.trim() !== '') {
-                username = usernameInput.value.trim();
-                usernameContainer.style.display = 'none';
-                chatContainer.style.display = 'flex'; // Menggunakan flexbox
-                socket.emit('user joined', username);
-            }
-        });
+      // --- Event Handlers ---
 
-        createGroupForm.addEventListener('submit', (e) => {
+      // Signup
+      signupButton.addEventListener('click', async () => {
+          const username = signupUsernameInput.value.trim();
+          const password = signupPasswordInput.value.trim();
+
+          if (username && password) {
+              try {
+                  const response = await fetch('/signup', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ username, password })
+                  });
+                  const data = await response.json();
+                  if (response.ok) {
+                      userId = data.userId; // Simpan userId setelah signup
+                      username = username;
+                      showChat();
+
+                  } else {
+                      showError(data.message || 'Signup failed');
+                  }
+              } catch (error) {
+                  console.error("Signup error:", error);
+                  showError('Signup failed');
+              }
+          }
+      });
+
+      // Login
+      loginButton.addEventListener('click', async () => {
+          const username = loginUsernameInput.value.trim();
+          const password = loginPasswordInput.value.trim();
+
+          if (username && password) {
+              try {
+                  const response = await fetch('/login', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ username, password })
+                  });
+                  const data = await response.json();
+                  if (response.ok) {
+                      userId = data.userId; // Simpan userId setelah login
+                      username = username;
+                      showChat();
+
+                  } else {
+                      showError(data.message || 'Login failed');
+                  }
+
+              } catch (error) {
+                console.error("Login error", error);
+                showError('Login failed');
+              }
+          }
+      });
+
+      createGroupForm.addEventListener('submit', (e) => {
             e.preventDefault();
             const groupName = groupNameInput.value.trim();
             if (groupName) {
-                socket.emit('create group', groupName);
+                socket.emit('create group', {groupName, userId});
                 groupNameInput.value = '';
             }
         });
@@ -98,23 +176,20 @@
         form.addEventListener('submit', (e) => {
             e.preventDefault();
             if (input.value.trim() && currentTarget) {
-                socket.emit('chat message', { message: input.value.trim() });
+                socket.emit('chat message', { message: input.value.trim(), userId });
                 input.value = '';
             }
         });
 
-
         // --- Socket.IO Event Listeners ---
-
         socket.on('initial data', (data) => {
             updateUserList(data.users);
             updateGroupList(data.groups);
-            // data.privateMessages tidak di-handle di sini
         });
 
         socket.on('user joined', (joinedUsername) => {
-          addUserToList(joinedUsername); // Tambahkan user ke daftar
-          addSystemMessage(`${joinedUsername} telah bergabung!`);
+            addUserToList(joinedUsername);
+            addSystemMessage(`${joinedUsername} telah bergabung!`);
         });
 
         socket.on('user left', (leftUsername) => {
@@ -122,43 +197,42 @@
           addSystemMessage(`${leftUsername} telah keluar!`);
         });
 
-
         socket.on('group list update', (groups) => {
-            updateGroupList(groups);
+           updateGroupList(groups);
         });
-
         socket.on('chat message', (data) => {
             displayMessage(data);
         });
 
         socket.on('chat history', (data) => {
-            messages.innerHTML = ''; // Bersihkan pesan sebelumnya
-            data.messages.forEach(displayMessage);
-            messages.scrollTop = messages.scrollHeight;
+          messages.innerHTML = '';
+          data.messages.forEach(displayMessage);
+          messages.scrollTop = messages.scrollHeight;
         });
-
+        socket.on('error message', (message) => {
+          showError(message); // Menampilkan pesan error
+        })
 
         // --- Helper Functions ---
         function updateUserList(users) {
-            userList.innerHTML = '';
-            users.forEach(user => addUserToList(user));
+          userList.innerHTML = '';
+          users.forEach(user => addUserToList(user));
         }
         function addUserToList(user) {
-             const li = document.createElement('li');
+            const li = document.createElement('li');
             li.textContent = user;
             li.addEventListener('click', () => startPrivateChat(user));
             userList.appendChild(li);
         }
-
-        function removeUserFromList(user) {
+        function removeUserFromList(user){
           const userElement = Array.from(userList.children).find(li => li.textContent === user);
-          if (userElement) {
+          if(userElement) {
             userList.removeChild(userElement);
           }
         }
 
         function updateGroupList(groups) {
-            groupList.innerHTML = '';
+          groupList.innerHTML = '';
             groups.forEach(group => {
                 const li = document.createElement('li');
                 li.textContent = group;
@@ -170,12 +244,12 @@
         function joinGroup(groupName) {
             currentTarget = groupName;
             chatTitle.textContent = `Grup: ${groupName}`;
-            socket.emit('join group', groupName);
+            socket.emit('join group', {groupName, userId});
             clearActiveSelection();
-            // Cari elemen grup dan tambahkan class 'active'
-           const groupElement = Array.from(groupList.children).find(li => li.textContent === groupName);
+            // Find group element and add 'active' class
+            const groupElement = Array.from(groupList.children).find(li => li.textContent === groupName);
             if(groupElement) {
-                groupElement.classList.add('active');
+              groupElement.classList.add('active');
             }
 
         }
@@ -183,21 +257,17 @@
         function startPrivateChat(targetUser) {
             currentTarget = targetUser;
             chatTitle.textContent = `Chat dengan ${targetUser}`;
-            socket.emit('start private chat', targetUser);
+            socket.emit('start private chat', {targetUser, userId});
             clearActiveSelection();
             const userElement = Array.from(userList.children).find(li => li.textContent === targetUser);
-            if(userElement) {
+            if(userElement){
               userElement.classList.add('active');
             }
-
         }
-
-        function clearActiveSelection() {
-          // Hapus class 'active' dari semua item di daftar grup dan pengguna
+        function clearActiveSelection(){
           Array.from(groupList.children).forEach(li => li.classList.remove('active'));
           Array.from(userList.children).forEach(li => li.classList.remove('active'));
         }
-
 
         function displayMessage(data) {
            const item = document.createElement('li');
@@ -205,13 +275,12 @@
 
             // Format timestamp (contoh sederhana)
             const time = new Date(data.timestamp);
-            const timeString = time.toLocaleTimeString(); // Format waktu lokal
+            const timeString = time.toLocaleTimeString();
 
              // Tampilkan target jika ada
             const targetPrefix = data.target ? `[${data.target}] ` : '';
 
             item.textContent = `${targetPrefix}${senderText}: ${data.message} (${timeString})`;
-
 
             if (data.sender === username) {
                 item.classList.add('sender');
@@ -221,7 +290,6 @@
             messages.appendChild(item);
             messages.scrollTop = messages.scrollHeight;
         }
-
         function addSystemMessage(message) {
             const item = document.createElement('li');
             item.textContent = message;
@@ -229,6 +297,18 @@
             messages.appendChild(item);
             messages.scrollTop = messages.scrollHeight;
         }
+
+        function showChat() {
+            authContainer.style.display = 'none';
+            chatContainer.classList.add('active');
+            socket.emit('user joined', { userId, username }); // Kirim userId dan username
+        }
+      function showError(message){
+        errorMessageDiv.textContent = message;
+        setTimeout(()=> {
+          errorMessageDiv.textContent = '';
+        }, 5000) // Sembunyikan setelah 5 detik
+      }
 
     </script>
 </body>
