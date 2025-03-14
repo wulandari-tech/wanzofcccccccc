@@ -9,7 +9,9 @@ const io = new Server(server);
 
 const PORT = 3000;
 // GANTI INI DENGAN STRING KONEKSI MONGODB ANDA (JANGAN LAKUKAN INI DI APLIKASI NYATA!)
-const MONGODB_URI = 'mongodb+srv://zanssxploit:pISqUYgJJDfnLW9b@cluster0.fgram.mongodb.net/?retryWrites=true&w=majority';
+// PASTIKAN SUDAH MENYERTAKAN NAMA DATABASE DI URL!!!
+const MONGODB_URI = 'mongodb+srv://zanssxploit:pISqUYgJJDfnLW9b@cluster0.fgram.mongodb.net?retryWrites=true&w=majority'; // GANTI!!!
+
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -20,7 +22,7 @@ app.get('/', (req, res) => {
 
 // --- MongoDB Setup (Sederhana) ---
 
-mongoose.connect(MONGODB_URI)
+mongoose.connect(MONGODB_URI, { useNewUrlParser: true, useUnifiedTopology: true }) // Tambah opsi
   .then(() => console.log('Terhubung ke MongoDB'))
   .catch(err => console.error('Gagal terhubung ke MongoDB:', err));
 
@@ -95,7 +97,7 @@ io.on('connection', (socket) => {
                 return next(new Error("Invalid user ID."));
             }
             currentUsername = user.username;
-            packet[1].username = currentUsername;
+            packet[1].username = currentUsername; //Tambahkan username ke data event
         }
         next();
     });
@@ -277,18 +279,18 @@ io.on('connection', (socket) => {
                     timestamp: populatedMessage.createdAt,
                     target: currentTarget
                 });
-
+                // Find the target user's socket ID (Very inefficient in real app)
                 const targetSocketId = Object.keys(io.sockets.sockets).find(key => {
                   const s = io.sockets.sockets[key];
-                  return s.currentUsername === targetUser.username
+                  return s.currentUsername === targetUser.username;
                 });
-                if(targetSocketId) {
-                  io.to(targetSocketId).emit('chat message', {
-                    sender: populatedMessage.sender.username,
-                    message: populatedMessage.message,
-                    timestamp: populatedMessage.createdAt,
-                    target: currentUsername // Sender is the target for the recipient
-                  });
+                if (targetSocketId) {
+                    io.to(targetSocketId).emit('chat message', {
+                        sender: populatedMessage.sender.username, // Use the populated sender
+                        message: populatedMessage.message,
+                        timestamp: populatedMessage.createdAt,
+                        target: currentUsername // The sender becomes the target for the recipient
+                    });
                 }
               }
             }
