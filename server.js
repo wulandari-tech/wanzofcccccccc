@@ -1,231 +1,150 @@
 const express = require('express');
 const http = require('http');
-const { Server } = require('socket.io');
-
+const socketIo = require('socket.io');
+const { v4: uuidv4 } = require('uuid');
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server);
-
-const PORT = 3000;
-
-// Data (simpan di memori - HILANG JIKA SERVER RESTART)
-const users = {}; // { socketId: { username, userId } }  // Simpan userId juga
-const groups = {}; // { groupName: { members: [userId, ...], messages: [] } }
-const privateMessages = {}; // { 'user1Id:user2Id': [] }
-
-let nextUserId = 1; // ID user yang di-generate (simulasi)
-let nextGroupId = 1; // ID grup yang di generate (simulasi)
-
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+const io = socketIo(server);
+const PORT = process.env.PORT || 3000;
 
 app.get('/', (req, res) => {
-  res.sendFile(__dirname + '/index.html');
+    res.sendFile(__dirname + '/index.html');
 });
 
-// --- Simulasi Routes (tanpa database) ---
+// Struktur data utama untuk menyimpan history chat dan keanggotaan grup
+const chatHistory = {
+    private: {}, // { "user1-user2": [ {sender, recipient, message, timestamp, id} ] }
+    group: {}     // { "groupId": [ {sender, message, timestamp, id, groupName} ] }
+};
 
-app.post('/signup', (req, res) => {
-    const { username, password } = req.body; // Password masih plain text!
-    if (!username || !password) {
-        return res.status(400).send('Username dan password harus diisi.');
-    }
-    // Cek username sudah ada (simulasi)
-    if (Object.values(users).some(user => user.username === username)) {
-        return res.status(400).send('Username sudah digunakan.');
-    }
+const registeredUsers = new Set(); // Menyimpan username, BUKAN daftar user online
+const userSockets = new Map();      // Menyimpan socketId berdasarkan username
 
-    const userId = nextUserId++;
-    users[userId] = { username, password, userId }; // Simpan password plain text dan userId!
-    res.status(201).send({ message: 'Signup berhasil', userId: userId });
-});
-
-app.post('/login', (req, res) => {
-    const { username, password } = req.body;
-    const user = Object.values(users).find(u => u.username === username && u.password === password); // Bandingkan plain text!
-    if (!user) {
-        return res.status(401).send('Login gagal');
-    }
-    res.status(200).send({ message: 'Login berhasil', userId: user.userId });
-});
-
-// --- Socket.IO ---
 io.on('connection', (socket) => {
-    let currentUsername = null;
-    let currentUserId = null;
-    let currentTarget = null; // Group name atau username
-
-    // Middleware (simulasi autentikasi)
-    socket.use((packet, next) => {
-        const eventName = packet[0];
-        const authEvents = ['user joined', 'create group', 'join group', 'leave group', 'start private chat', 'chat message', 'disconnect'];
-        if (authEvents.includes(eventName)) {
-            const userId = packet[1]?.userId;
-            if (!userId) {
-                return next(new Error("Authentication required."));
-            }
-            // Verifikasi (simulasi)
-            const user = users[userId];
-             if (!user) {
-                return next(new Error("Invalid user ID."));
-            }
-            currentUsername = user.username; // Set username
-            currentUserId = userId;  // Set userId
-            packet[1].username = currentUsername;//tambah username ke packet
-        }
-        next();
-    });
+    console.log('a user connected');
+    let currentUser = null;
+    let currentGroup = null;
 
 
-    socket.on('user joined', (data) => {
-      const { userId, username } = data;
-        console.log(`${username} joined`);
-
-        // Kirim data awal
-        socket.emit('initial data', {
-            users: Object.values(users).filter(u => u.userId !== userId).map(u=> u.username),
-            groups: Object.keys(groups),
-        });
-        socket.broadcast.emit('user joined', username);
-    });
-
-    socket.on('create group', (data) => {
-        const { groupName, userId } = data;
-        if (!groupName) return;
-
-        // Cek duplikat (simulasi)
-        if (groups[groupName]) {
-            return socket.emit('error message', 'Nama grup sudah ada.');
+    socket.on('registerUsername', (username) => {
+        if (registeredUsers.has(username)) {
+            socket.emit('usernameTaken');
+            return;
         }
 
-        const groupId = nextGroupId++;
-        groups[groupName] = { members: [userId], messages: [], groupId: groupId };
+        registeredUsers.add(username);
+        currentUser = username;
+        userSockets.set(username, socket.id); // Simpan socket ID
+        socket.username = username; // Simpan username di objek socket
+        socket.emit('usernameRegistered', username);
+        io.emit('onlineUsers', getOnlineUsers()); // Kirim daftar user online ke semua
+        socket.join('general');
+        currentGroup = "general";
+        // Kirim history chat "general"
+        socket.emit('groupChatHistory', chatHistory.group['general'] || []);
+    });
+
+      // Event:  Logout
+    socket.on('logout', () => {
+        if (currentUser) {
+            registeredUsers.delete(currentUser);
+            userSockets.delete(currentUser);
+            socket.leaveAll(); // Keluar dari semua room
+            currentUser = null;
+            currentGroup = null
+            io.emit('onlineUsers', getOnlineUsers()); // Update daftar online
+            //socket.disconnect(true); // Opsi: putuskan koneksi
+        }
+    });
+
+    socket.on('privateMessage', ({ recipient, message }) => {
+        if (!currentUser) return;
+
+        const messageId = uuidv4();
+        const timestamp = new Date().toISOString();
+        const chatKey = [currentUser, recipient].sort().join('-');
+
+        if (!chatHistory.private[chatKey]) {
+            chatHistory.private[chatKey] = [];
+        }
+        const newMessage = { sender: currentUser, recipient, message, timestamp, id: messageId };
+        chatHistory.private[chatKey].push(newMessage);
+
+        // Kirim ke pengirim
+        socket.emit('privateMessage', newMessage);
+
+        // Kirim ke penerima, jika online
+        const recipientSocketId = userSockets.get(recipient);
+        if (recipientSocketId) {
+            io.to(recipientSocketId).emit('privateMessage', newMessage);
+        }
+    });
+
+    socket.on('groupMessage', ({ groupName, message }) => {
+        if (!currentUser || !groupName) return;
+
+        const messageId = uuidv4();
+        const timestamp = new Date().toISOString();
+
+        if (!chatHistory.group[groupName]) {
+            chatHistory.group[groupName] = [];
+        }
+        const newMessage = { sender: currentUser, message, timestamp, id: messageId, groupName };
+        chatHistory.group[groupName].push(newMessage);
+
+        // Kirim ke SEMUA anggota grup
+        io.to(groupName).emit('groupMessage', newMessage);
+    });
+
+    socket.on('createGroup', (groupName) => {
+      if (!currentUser) return;
+      if(groupName.trim() === '' || groupName.trim() === 'general'){
+        socket.emit("groupError", "Nama Group tidak valid")
+        return;
+      }
+
+      if (chatHistory.group[groupName]) {
+        socket.emit('groupExists', groupName); // Beri tahu kalau grup sudah ada
+      } else {
+        chatHistory.group[groupName] = []; // Buat entry baru di chatHistory
+        socket.join(groupName);          // Tambahkan user ke room grup
+        currentGroup = groupName
+        socket.emit('groupCreated', groupName);      // Konfirmasi ke user
+        io.emit('groupListUpdate', Object.keys(chatHistory.group)); // Update daftar grup di semua klien
+      }
+    });
+
+    socket.on('joinGroup', (groupName) => {
+        if (!currentUser) return;
+        socket.leaveAll(); // Tinggalkan semua grup sebelumnya
         socket.join(groupName);
-		console.log(`${currentUsername} membuat grup ${groupName}`);
-        io.emit('group list update', Object.keys(groups));
+        currentGroup = groupName;
+
+        socket.emit('joinedGroup', groupName);
+        // Kirim SELURUH history grup ke pengguna yang baru bergabung
+        socket.emit('groupChatHistory', chatHistory.group[groupName] || []);
     });
 
-    socket.on('join group', (data) => {
-      const { groupName, userId } = data;
-      if (!groupName) return;
-
-      const group = groups[groupName];
-      if (!group) {
-          return socket.emit('error message', 'Grup tidak ditemukan.');
-      }
-
-      if (!group.members.includes(userId)) {
-          group.members.push(userId);
-          socket.join(groupName);
-
-          // Kirim riwayat pesan grup
-          socket.emit('chat history', {
-              target: groupName,
-              messages: group.messages,
-          });
-        console.log(`${currentUsername} bergabung ke grup ${groupName}`);
-      }
-        currentTarget = groupName;
+    socket.on('requestPrivateChatHistory', (recipient) => {
+        if (!currentUser) return;
+        const chatKey = [currentUser, recipient].sort().join('-');
+        socket.emit('privateChatHistory', chatHistory.private[chatKey] || []);
     });
 
-    socket.on('leave group', (data) => {
-      const {groupName, userId} = data;
-      if(!groupName) return;
-
-      const group = groups[groupName];
-      if(!group) return;
-
-      if(group.members.includes(userId)){
-        group.members = group.members.filter(id => id !== userId);
-        socket.leave(groupName);
-        console.log(`${currentUsername} meninggalkan grup ${groupName}`);
-        currentTarget = null;
-
-        if(group.members.length === 0){
-          delete groups[groupName];
-          io.emit('group list update', Object.keys(groups));
-        }
-      }
-    });
-
-    socket.on('start private chat', (data) => {
-      const { targetUser, userId } = data;
-        currentTarget = targetUser;
-
-        // Cari userId dari targetUser
-        const targetUserObj = Object.values(users).find(u => u.username === targetUser);
-        if (!targetUserObj) return;
-
-        // Buat key (simulasi)
-        const usersKey = [userId, targetUserObj.userId].sort().join(':');
-
-        // Kirim riwayat pesan privat
-        socket.emit('chat history', {
-            target: targetUser,
-            messages: privateMessages[usersKey] || [],
-        });
-    });
-
-    socket.on('chat message', (data) => {
-      const { message, userId } = data;
-        if (!message) return;
-
-        const messageData = {
-            sender: currentUsername,
-            message,
-            timestamp: new Date(),
-        };
-
-        if (currentTarget) {
-            if (groups[currentTarget]) {
-                // Pesan grup
-                groups[currentTarget].messages.push(messageData);
-                io.to(currentTarget).emit('chat message', { ...messageData, target: currentTarget });
-            } else {
-                // Pesan privat
-
-                // Cari userId dari targetUser
-                const targetUserObj = Object.values(users).find(u => u.username === currentTarget);
-
-                if (!targetUserObj) return;
-
-                // Buat key (simulasi)
-                const usersKey = [userId, targetUserObj.userId].sort().join(':');
-                if (!privateMessages[usersKey]) {
-                    privateMessages[usersKey] = [];
-                }
-                privateMessages[usersKey].push(messageData);
-
-                // Kirim ke pengirim dan penerima
-                socket.emit('chat message', { ...messageData, target: currentTarget });
-                // Find the target user's socket (Very inefficient)
-                const targetSocketId = Object.keys(io.sockets.sockets).find(key => {
-                  const s = io.sockets.sockets[key];
-                  return s.currentUsername === targetUserObj.username
-                });
-
-                if (targetSocketId) {
-                  io.to(targetSocketId).emit('chat message', { ...messageData, target: currentUsername });
-                }
-            }
-        }
-    });
+    // Helper function untuk mendapatkan daftar user online
+    function getOnlineUsers() {
+        return Array.from(userSockets.keys());
+    }
 
     socket.on('disconnect', () => {
-        if (currentUsername) {
-            console.log(`${currentUsername} disconnected`);
-            // Hapus user dari grup (simulasi)
-            for(const groupName in groups){
-              if(groups[groupName].members.includes(currentUserId)){
-                groups[groupName].members = groups[groupName].members.filter(id => id !== currentUserId);
-              }
-            }
-
-            socket.broadcast.emit('user left', currentUsername);
+        console.log('user disconnected');
+        if (currentUser) {
+            userSockets.delete(currentUser);
+            io.emit('onlineUsers', getOnlineUsers());  // Update daftar user online
         }
     });
 });
 
 server.listen(PORT, () => {
-  console.log(`Server berjalan di http://localhost:${PORT}`);
+    console.log(`listening on *:${PORT}`);
 });
