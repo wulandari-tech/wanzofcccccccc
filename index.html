@@ -5,38 +5,50 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NGL Clone</title>
     <style>
-         body {
+      body {
             font-family: 'Inter', sans-serif;
             display: flex;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
-            background-color: #f7f7f7;
+            background-color: #121212; /* Dark background */
+            color: #fff;              /* White text */
             margin: 0;
             padding: 20px;
+            overflow-x: hidden;
+        }
+         #particles-js {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            z-index: 0; /* Di belakang konten */
         }
 
         #container {
-            background-color: #fff;
+            background-color: #1e1e1e; /* Slightly lighter dark background */
             border-radius: 12px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5); /* Darker shadow */
             max-width: 450px;
             width: 100%;
             padding: 30px;
             text-align: center;
             box-sizing: border-box;
-            position: relative; /* Untuk positioning tombol logout */
+            position: relative;
+            z-index: 1;
         }
 
         h1 {
-            color: #333;
-            margin-bottom: 10px; /* Jarak lebih kecil */
+            color: #fff; /* White heading */
+            margin-bottom: 10px;
         }
+
         h2 {
-            color: #555;
+            color: #ddd; /* Light gray subheading */
             margin-bottom: 20px;
-            font-size: 1.1em; /* Sedikit lebih kecil dari h1 */
-            font-weight: normal; /* Tidak terlalu tebal */
+            font-size: 1.1em;
+            font-weight: normal;
         }
 
         .section {
@@ -46,14 +58,25 @@
         input[type="text"],
         textarea,
         input[type="username"],
-        input[type="url"] { /* Tambahkan input[type="url"] */
+        input[type="url"] {
             width: 100%;
             padding: 12px;
             margin-bottom: 15px;
-            border: 1px solid #ddd;
+            border: 1px solid #444; /* Darker border */
             border-radius: 8px;
             box-sizing: border-box;
             font-size: 16px;
+            background-color: #2a2a2a; /* Dark input background */
+            color: #fff;              /* White text in input */
+            transition: border-color 0.3s ease;
+        }
+
+        input[type="text"]:focus,
+        textarea:focus,
+        input[type="username"]:focus,
+        input[type="url"]:focus {
+            border-color: #8a2be2; /* Keep the purple focus color */
+            outline: none;
         }
 
         textarea {
@@ -70,13 +93,16 @@
             cursor: pointer;
             font-size: 16px;
             transition: background-color 0.3s ease;
-            display: inline-block; /* Agar tombol copy dan salin sejajar */
-            margin: 0 5px; /* Beri sedikit jarak antar tombol */
-
+            display: inline-block;
+            margin: 0 5px;
         }
 
-        button:hover {
-            background-color: #6a1b9a;
+        button:disabled {
+            background-color: #444; /* Darker disabled button */
+            cursor: not-allowed;
+        }
+        button:hover:not(:disabled) {
+             background-color: #6a1b9a;
         }
 
         #messages {
@@ -84,76 +110,164 @@
         }
 
         .message {
-            background-color: #eee;
+            background-color: #2a2a2a; /* Dark message background */
             padding: 10px 15px;
             margin-bottom: 10px;
             border-radius: 8px;
             text-align: left;
+            display: flex;
+            align-items: flex-start;
+        }
+
+        .message-content {
+            flex-grow: 1;
         }
 
         #userLinkDisplay {
             margin-top: 15px;
-            word-break: break-all; /* URL panjang tidak merusak layout */
-            color: #555;
-
+            word-break: break-all;
+            color: #ddd; /* Light gray text */
         }
 
         #copyUrlSection {
-            display: flex; /* Agar input dan tombol sejajar */
-            align-items: center; /* Pusatkan vertikal */
+            display: flex;
+            align-items: center;
             margin-bottom: 15px;
         }
-        #copyUrlSection input{
+       #copyUrlSection input{
             margin-bottom: 0px;
         }
 
         #sendResult {
-            color: green;
+            color: #4CAF50; /* Keep green for success, adjust as needed */
         }
 
         #error-message {
-            color: red;
+            color: #f44336; /* Keep red for errors, adjust as needed */
             margin-top: 10px;
         }
+
         #logoutBtn {
             position: absolute;
             top: 10px;
             right: 10px;
-            background-color: #ccc;
-            color: #333;
+            background-color: #444; /* Darker logout button */
+            color: #fff;
         }
 
         @media (max-width: 600px) {
             #container {
                 padding: 20px;
             }
-             button {
-                display: block; /* Tombol jadi blok di layar kecil */
-                width: 100%;     /* Lebar penuh */
-                margin: 5px 0;    /* Jarak atas-bawah */
+
+            button {
+                display: block;
+                width: 100%;
+                margin: 5px 0;
             }
         }
+
+          .message-box {
+            padding: 10px 15px;
+            margin-bottom: 15px;
+            border-radius: 8px;
+            text-align: center;
+            color: #fff;
+        }
+
+        .success-message {
+            background-color: #4CAF50; /* Green */
+            border: 1px solid #388E3C;
+
+        }
+
+        .error-message {
+            background-color: #f44336; /* Red */
+            border: 1px solid #d32f2f;
+
+        }
+
+        .loading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.8); /* Dark semi-transparent */
+            display: none;
+            justify-content: center;
+            align-items: center;
+            border-radius: 12px;
+            z-index: 10;
+        }
+
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #8a2be2;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 2s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        form {
+            width: 100%;
+        }
+
+        .avatar {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background-color: #8a2be2;
+            color: #fff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-right: 10px;
+            font-size: 14px;
+        }
+
+        .message-timestamp {
+            font-size: 0.8em;
+            color: #aaa; /* Slightly darker gray for timestamp */
+            margin-top: 4px;
+        }
     </style>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- particles.js library -->
+    <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
+     <!-- GSAP library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
 </head>
 <body>
+    <div id="particles-js"></div>
     <div id="container">
         <h1>NGL Clone</h1>
+        <div class="loading-overlay" id="loadingOverlay">
+            <div class="loader"></div>
+        </div>
 
         <button id="logoutBtn" style="display: none;">Logout</button>
 
         <!-- Bagian: Daftar -->
         <div id="registerSection" class="section">
             <h2>Register</h2>
-            <input type="username" id="registerUsername" placeholder="Enter your username">
-            <button id="registerBtn">Register</button>
-            <p id="error-message"></p>
+            <form id="registerForm">
+                <input type="username" id="registerUsername" placeholder="Enter your username" required>
+                <button type="submit">Register</button>
+                <div id="registerMessage" class="message-box" style="display: none;"></div>
+            </form>
         </div>
 
         <!-- Bagian: Inbox (Setelah Daftar) -->
-        <div id="linkAndInboxSection" class="section" style="display: none;">
+          <div id="linkAndInboxSection" class="section" style="display: none;">
             <h2>Your Inbox</h2>
-              <div id="copyUrlSection">
+            <div id="copyUrlSection">
                 <input type="url" id="userLinkInput" readonly>
                 <button id="copyUrlBtn">Copy URL</button>
             </div>
@@ -163,39 +277,100 @@
 
         <!-- Bagian: Kirim Pesan -->
         <div id="sendMessageSection" class="section" style="display: none;">
-           <h2 id="sendMessageTitle">Send Anonymous Message</h2>
-            <textarea id="messageInput" placeholder="Your message..."></textarea>
-            <button id="sendBtn">Send</button>
-            <p id="sendResult"></p>
+            <h2 id="sendMessageTitle">Send Anonymous Message</h2>
+             <form id="sendMessageForm">
+                <textarea id="messageInput" placeholder="Your message..." required></textarea>
+                <button type="submit">Send</button>
+                <div id="sendMessageResult" class="message-box" style="display: none;"></div>
+            </form>
         </div>
     </div>
 
     <script>
-      const registerSection = document.getElementById('registerSection');
+          // --- Inisialisasi particles.js ---
+        particlesJS('particles-js', {
+            particles: {
+                number: { value: 80, density: { enable: true, value_area: 800 } },
+                color: { value: ['#8a2be2', '#00ffff', '#00ff00', '#ffff00', '#ff00ff'] }, // Warna-warni
+                shape: { type: 'circle', stroke: { width: 0, color: '#000000' }, polygon: { nb_sides: 5 } },
+                opacity: { value: 0.5, random: true, anim: { enable: false, speed: 1, opacity_min: 0.1, sync: false } },
+                size: { value: 3, random: true, anim: { enable: true, speed: 10, size_min: 0.1, sync: false } },
+                line_linked: { enable: true, distance: 150, color: '#8a2be2', opacity: 0.4, width: 1 },
+                move: {
+                    enable: true,
+                    speed: 2,
+                    direction: 'none',
+                    random: true,
+                    straight: false,
+                    out_mode: 'out',
+                    bounce: false,
+                },
+            },
+            interactivity: {
+                detect_on: 'canvas',
+                events: { onhover: { enable: true, mode: 'repulse' }, onclick: { enable: true, mode: 'push' }, resize: true },
+                modes: {
+                    grab: { distance: 400, line_linked: { opacity: 1 } },
+                    bubble: { distance: 400, size: 40, duration: 2, opacity: 8, speed: 3 },
+                    repulse: { distance: 100, duration: 0.4 },
+                    push: { particles_nb: 4 },
+                    remove: { particles_nb: 2 },
+                },
+            },
+            retina_detect: true,
+        });
+
+
+        // --- Variabel DOM ---
+        const registerSection = document.getElementById('registerSection');
+        const registerForm = document.getElementById('registerForm');
         const registerUsernameInput = document.getElementById('registerUsername');
-        const registerBtn = document.getElementById('registerBtn');
+        const registerMessage = document.getElementById('registerMessage');
         const linkAndInboxSection = document.getElementById('linkAndInboxSection');
         const userLinkInput = document.getElementById('userLinkInput');
         const copyUrlBtn = document.getElementById('copyUrlBtn');
         const refreshBtn = document.getElementById('refreshBtn');
         const messagesDiv = document.getElementById('messages');
         const sendMessageSection = document.getElementById('sendMessageSection');
+        const sendMessageForm = document.getElementById('sendMessageForm');
         const sendMessageTitle = document.getElementById('sendMessageTitle');
         const messageInput = document.getElementById('messageInput');
-        const sendBtn = document.getElementById('sendBtn');
-        const sendResult = document.getElementById('sendResult');
-		const errorMessage = document.getElementById('error-message');
+        const sendMessageResult = document.getElementById('sendMessageResult');
         const logoutBtn = document.getElementById('logoutBtn');
+        const loadingOverlay = document.getElementById('loadingOverlay');
 
-
-
-        // --- Fungsi-fungsi Bantu ---
+       // --- Fungsi-fungsi Bantu ---
 
         function showSection(section) {
             registerSection.style.display = 'none';
             linkAndInboxSection.style.display = 'none';
             sendMessageSection.style.display = 'none';
             section.style.display = 'block';
+
+            //Animasi dengan GSAP
+            gsap.from(section, { opacity: 0, y: -20, duration: 0.5, ease: 'power2.out' });
+        }
+
+        function showLoading() {
+            loadingOverlay.style.display = 'flex';
+            document.querySelectorAll('button').forEach(button => button.disabled = true);
+
+        }
+
+        function hideLoading() {
+            loadingOverlay.style.display = 'none';
+            document.querySelectorAll('button').forEach(button => button.disabled = false);
+
+        }
+
+        function showMessage(element, message, isSuccess = true) {
+            element.textContent = message;
+            element.style.display = 'block';
+            element.className = isSuccess ? 'message-box success-message' : 'message-box error-message';
+        }
+
+        function hideMessage(element) {
+            element.style.display = 'none';
         }
 
         function setupLinkAndInbox(username) {
@@ -203,29 +378,106 @@
             userLinkInput.value = userLink;
         }
 
+        function getAvatarText(username) {
+            return username.charAt(0).toUpperCase(); // Ambil huruf pertama, jadikan uppercase
+        }
+
+        function generateAvatarColor(username) {
+            // Metode hash sederhana (bisa diganti dengan yang lebih canggih)
+            let hash = 0;
+            for (let i = 0; i < username.length; i++) {
+                hash = username.charCodeAt(i) + ((hash << 5) - hash);
+            }
+            const color = `hsl(${hash % 360}, 70%, 60%)`; // Hue acak, saturation dan lightness tetap
+            return color;
+        }
+
+        // Fungsi untuk menampilkan pesan dengan avatar dan timestamp
+        function displayMessage(message) {
+             const currentUsername = localStorage.getItem('username'); //mendapatkan username
+            const avatarText = getAvatarText(currentUsername); // Ganti dengan logika avatar Anda
+            const avatarColor = generateAvatarColor(currentUsername); // Ganti dengan logika warna avatar Anda
+
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message';
+
+            const avatarDiv = document.createElement('div');
+            avatarDiv.className = 'avatar';
+            avatarDiv.textContent = avatarText;
+            avatarDiv.style.backgroundColor = avatarColor;
+
+            const messageContentDiv = document.createElement('div');
+            messageContentDiv.className = 'message-content';
+
+            const textDiv = document.createElement('div');
+            textDiv.textContent = message.text;
+
+            const timestampDiv = document.createElement('div');
+            timestampDiv.className = 'message-timestamp';
+            timestampDiv.textContent = formatTimestamp(message.timestamp); // Fungsi formatTimestamp di bawah
+
+            messageContentDiv.appendChild(textDiv);
+            messageContentDiv.appendChild(timestampDiv);
+
+            messageDiv.appendChild(avatarDiv);
+            messageDiv.appendChild(messageContentDiv);
+
+            messagesDiv.appendChild(messageDiv);
+
+            gsap.from(messageDiv, { opacity: 0, x: -20, duration: 0.3, ease: 'power2.out' }); // Animasi
+        }
+
+        // Fungsi untuk memformat timestamp
+        function formatTimestamp(timestamp) {
+            const date = new Date(timestamp);
+            const now = new Date();
+            const diffInSeconds = Math.floor((now - date) / 1000);
+
+            if (diffInSeconds < 60) {
+                return 'just now';
+            } else if (diffInSeconds < 3600) {
+                return Math.floor(diffInSeconds / 60) + ' minutes ago';
+            } else if (diffInSeconds < 86400) {
+                return Math.floor(diffInSeconds / 3600) + ' hours ago';
+            } else {
+                // Format tanggal/waktu lengkap (bisa disesuaikan)
+                return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+            }
+        }
+
+
         async function loadMessages() {
-             const currentUsername = localStorage.getItem('username');
+            const currentUsername = localStorage.getItem('username');
             if (!currentUsername) {
                 showSection(registerSection);
                 return;
             }
 
-            const response = await fetch(`/api/messages/${currentUsername}`);
-            const data = await response.json();
+            showLoading();
+            try {
+                const response = await fetch(`/api/messages/${currentUsername}`);
+                const data = await response.json();
 
-            if (response.ok) {
-                messagesDiv.innerHTML = data.messages.map(msg => `<div class="message">${msg.text}</div>`).join('');
-            } else {
-                messagesDiv.innerHTML = 'Error loading messages.';
+                if (response.ok) {
+                    messagesDiv.innerHTML = ''; // Bersihkan pesan sebelumnya
+                    data.messages.forEach(displayMessage); // Gunakan fungsi displayMessage
+                } else {
+                     console.error("Error loading messages. Response:", response);
+                    showMessage(registerMessage,`Error loading messages: ${response.statusText}`, false)
+                }
+            } catch(error) {
+                 console.error("Error loading messages:", error);
+                showMessage(registerMessage, `Error: ${error.message}`, false);
+            } finally {
+                hideLoading();
             }
         }
 
-
-        function checkLocalStorage() {
+       function checkLocalStorage() {
             const username = localStorage.getItem('username');
             if (username) {
                 showSection(linkAndInboxSection);
-                setupLinkAndInbox(username); // Sekarang panggil dengan username
+                setupLinkAndInbox(username);
                 loadMessages();
                 logoutBtn.style.display = 'block';
             } else {
@@ -233,64 +485,70 @@
             }
         }
 
-
         // --- Event Listeners ---
 
-        registerBtn.addEventListener('click', async () => {
-           const username = registerUsernameInput.value;
-			errorMessage.textContent = "";
-            if (!username) {
-                errorMessage.textContent = "Please enter a username";
-                return;
-            }
+        registerForm.addEventListener('submit', async (event) => {
+             event.preventDefault();
+            const username = registerUsernameInput.value;
 
-            const response = await fetch('/api/register', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username }),
-            });
-            const data = await response.json();
+            hideMessage(registerMessage);
+            showLoading();
 
-            if (response.ok) {
-                // Simpan HANYA username di localStorage
-                localStorage.setItem('username', data.username);
-                showSection(linkAndInboxSection);
-                setupLinkAndInbox(data.username); // Kirim username
-                loadMessages();
-				logoutBtn.style.display = 'block';
-            } else {
-                errorMessage.textContent = data.error || 'Registration failed.';
+            try{
+                const response = await fetch('/api/register', {
+                    method : 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({username}),
+                });
+                const data = await response.json();
+
+                if(response.ok){
+                    localStorage.setItem('username', data.username);
+                    showSection(linkAndInboxSection);
+                    setupLinkAndInbox(data.username);
+                    loadMessages();
+                    logoutBtn.style.display = 'block';
+                } else {
+                    showMessage(registerMessage, data.error || 'Registration failed.', false);
+                }
+            } catch(error){
+                showMessage(registerMessage, 'An unexpected error occurred.', false);
+
+            } finally{
+                hideLoading();
             }
         });
 
-        sendBtn.addEventListener('click', async () => {
-            // Ambil username dari URL (bukan lagi userId)
-            const username = window.location.pathname.split('/').pop(); // "/user/wanzofc" -> "wanzofc"
+        sendMessageForm.addEventListener('submit', async (event) => {
+           event.preventDefault();
+            const username = window.location.pathname.split('/').pop();
             const message = messageInput.value;
 
-            if (!message) {
-                sendResult.textContent = "Please enter a message";
-                return;
-            }
-            sendResult.textContent = "Sending...";
+            hideMessage(sendMessageResult);
+            showLoading();
 
-            const response = await fetch(`/api/send/${username}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ message }),
-            });
-            const result = await response.json();
-             sendResult.textContent = "";
-            if (response.ok) {
-                messageInput.value = '';
-                sendResult.textContent = 'Message sent successfully!';
-            } else {
-                 alert(result.error || 'Failed to send message.');
+            try {
+                const response = await fetch(`/api/send/${username}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message }),
+                });
+                const result = await response.json();
+
+                if (response.ok) {
+                    messageInput.value = '';
+                    showMessage(sendMessageResult, 'Message sent successfully!', true);
+                } else {
+                    showMessage(sendMessageResult, result.error || 'Failed to send message.', false);
+                }
+            } catch (error) {
+                showMessage(sendMessageResult, 'An unexpected error occurred.', false);
+            } finally {
+                hideLoading();
             }
         });
 
         refreshBtn.addEventListener('click', loadMessages);
-
 
         logoutBtn.addEventListener('click', () => {
             localStorage.removeItem('username');
@@ -299,42 +557,36 @@
         });
 
         copyUrlBtn.addEventListener('click', () => {
-            userLinkInput.select();
+             userLinkInput.select();
             document.execCommand('copy');
             copyUrlBtn.textContent = 'Copied!';
             setTimeout(() => { copyUrlBtn.textContent = 'Copy URL'; }, 2000);
         });
 
 
-
         // --- Cek URL dan localStorage saat halaman dimuat ---
 
-        const path = window.location.pathname; // "/user/wanzofc" atau "/"
+        const path = window.location.pathname;
 
         if (path.startsWith('/user/')) {
-            // 1. Kita di halaman user (ada username di URL)
-            const username = path.split('/').pop(); // Ambil username dari URL
-             showSection(sendMessageSection);
+            const username = path.split('/').pop();
+            showSection(sendMessageSection);
 
-            // 2. Ambil username dari SERVER untuk judul
             fetch(`/api/user/${username}`)
-                .then(response => {
-                    if (!response.ok) {
-                      throw new Error('User Not Found');
-                    }
-                    return response.json()
-                })
-                .then(data => {
-                    // 3. Set judul
-                    sendMessageTitle.textContent = `Send Anonymous Message to ${data.username}`;
-                })
-                .catch(error => {
-                     console.error("Error:", error);
-                    sendMessageTitle.textContent = "Send Anonymous Message"; // Judul default
-                });
-
+            .then(response => {
+                if(!response.ok){
+                    throw new Error("user not found")
+                }
+                return response.json();
+            })
+            .then(data => {
+                sendMessageTitle.textContent = `Send Anonymous Message to ${data.username}`;
+            })
+            .catch(error => {
+                console.error("Error fetching username for title:", error);
+                 sendMessageTitle.textContent = "Send Anonymous Message";
+            })
         } else {
-            // Kita di halaman utama (registrasi/inbox)
             checkLocalStorage();
         }
     </script>
