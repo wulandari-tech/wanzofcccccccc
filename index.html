@@ -5,14 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NGL Clone</title>
     <style>
-      body {
+        body {
             font-family: 'Inter', sans-serif;
             display: flex;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
-            background-color: #121212; /* Dark background */
-            color: #fff;              /* White text */
+            background-color: #121212;
+            color: #fff;
             margin: 0;
             padding: 20px;
             overflow-x: hidden;
@@ -23,13 +23,13 @@
             height: 100%;
             top: 0;
             left: 0;
-            z-index: 0; /* Di belakang konten */
+            z-index: 0;
         }
 
         #container {
-            background-color: #1e1e1e; /* Slightly lighter dark background */
+            background-color: #1e1e1e;
             border-radius: 12px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5); /* Darker shadow */
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
             max-width: 450px;
             width: 100%;
             padding: 30px;
@@ -40,12 +40,12 @@
         }
 
         h1 {
-            color: #fff; /* White heading */
+            color: #fff;
             margin-bottom: 10px;
         }
 
         h2 {
-            color: #ddd; /* Light gray subheading */
+            color: #ddd;
             margin-bottom: 20px;
             font-size: 1.1em;
             font-weight: normal;
@@ -62,12 +62,12 @@
             width: 100%;
             padding: 12px;
             margin-bottom: 15px;
-            border: 1px solid #444; /* Darker border */
+            border: 1px solid #444;
             border-radius: 8px;
             box-sizing: border-box;
             font-size: 16px;
-            background-color: #2a2a2a; /* Dark input background */
-            color: #fff;              /* White text in input */
+            background-color: #2a2a2a;
+            color: #fff;
             transition: border-color 0.3s ease;
         }
 
@@ -75,7 +75,7 @@
         textarea:focus,
         input[type="username"]:focus,
         input[type="url"]:focus {
-            border-color: #8a2be2; /* Keep the purple focus color */
+            border-color: #8a2be2;
             outline: none;
         }
 
@@ -98,7 +98,7 @@
         }
 
         button:disabled {
-            background-color: #444; /* Darker disabled button */
+            background-color: #444;
             cursor: not-allowed;
         }
         button:hover:not(:disabled) {
@@ -110,7 +110,7 @@
         }
 
         .message {
-            background-color: #2a2a2a; /* Dark message background */
+            background-color: #2a2a2a;
             padding: 10px 15px;
             margin-bottom: 10px;
             border-radius: 8px;
@@ -126,7 +126,7 @@
         #userLinkDisplay {
             margin-top: 15px;
             word-break: break-all;
-            color: #ddd; /* Light gray text */
+            color: #ddd;
         }
 
         #copyUrlSection {
@@ -139,11 +139,11 @@
         }
 
         #sendResult {
-            color: #4CAF50; /* Keep green for success, adjust as needed */
+            color: #4CAF50;
         }
 
         #error-message {
-            color: #f44336; /* Keep red for errors, adjust as needed */
+            color: #f44336;
             margin-top: 10px;
         }
 
@@ -151,7 +151,7 @@
             position: absolute;
             top: 10px;
             right: 10px;
-            background-color: #444; /* Darker logout button */
+            background-color: #444;
             color: #fff;
         }
 
@@ -176,13 +176,13 @@
         }
 
         .success-message {
-            background-color: #4CAF50; /* Green */
+            background-color: #4CAF50;
             border: 1px solid #388E3C;
 
         }
 
         .error-message {
-            background-color: #f44336; /* Red */
+            background-color: #f44336;
             border: 1px solid #d32f2f;
 
         }
@@ -193,7 +193,7 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background-color: rgba(0, 0, 0, 0.8); /* Dark semi-transparent */
+            background-color: rgba(0, 0, 0, 0.8);
             display: none;
             justify-content: center;
             align-items: center;
@@ -234,14 +234,12 @@
 
         .message-timestamp {
             font-size: 0.8em;
-            color: #aaa; /* Slightly darker gray for timestamp */
+            color: #aaa;
             margin-top: 4px;
         }
     </style>
-     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <!-- particles.js library -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
-     <!-- GSAP library -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
 </head>
 <body>
@@ -254,7 +252,6 @@
 
         <button id="logoutBtn" style="display: none;">Logout</button>
 
-        <!-- Bagian: Daftar -->
         <div id="registerSection" class="section">
             <h2>Register</h2>
             <form id="registerForm">
@@ -264,7 +261,6 @@
             </form>
         </div>
 
-        <!-- Bagian: Inbox (Setelah Daftar) -->
           <div id="linkAndInboxSection" class="section" style="display: none;">
             <h2>Your Inbox</h2>
             <div id="copyUrlSection">
@@ -275,7 +271,6 @@
             <div id="messages"></div>
         </div>
 
-        <!-- Bagian: Kirim Pesan -->
         <div id="sendMessageSection" class="section" style="display: none;">
             <h2 id="sendMessageTitle">Send Anonymous Message</h2>
              <form id="sendMessageForm">
@@ -287,11 +282,10 @@
     </div>
 
     <script>
-          // --- Inisialisasi particles.js ---
         particlesJS('particles-js', {
             particles: {
                 number: { value: 80, density: { enable: true, value_area: 800 } },
-                color: { value: ['#8a2be2', '#00ffff', '#00ff00', '#ffff00', '#ff00ff'] }, // Warna-warni
+                color: { value: ['#8a2be2', '#00ffff', '#00ff00', '#ffff00', '#ff00ff'] },
                 shape: { type: 'circle', stroke: { width: 0, color: '#000000' }, polygon: { nb_sides: 5 } },
                 opacity: { value: 0.5, random: true, anim: { enable: false, speed: 1, opacity_min: 0.1, sync: false } },
                 size: { value: 3, random: true, anim: { enable: true, speed: 10, size_min: 0.1, sync: false } },
@@ -320,8 +314,6 @@
             retina_detect: true,
         });
 
-
-        // --- Variabel DOM ---
         const registerSection = document.getElementById('registerSection');
         const registerForm = document.getElementById('registerForm');
         const registerUsernameInput = document.getElementById('registerUsername');
@@ -339,15 +331,12 @@
         const logoutBtn = document.getElementById('logoutBtn');
         const loadingOverlay = document.getElementById('loadingOverlay');
 
-       // --- Fungsi-fungsi Bantu ---
-
         function showSection(section) {
             registerSection.style.display = 'none';
             linkAndInboxSection.style.display = 'none';
             sendMessageSection.style.display = 'none';
             section.style.display = 'block';
 
-            //Animasi dengan GSAP
             gsap.from(section, { opacity: 0, y: -20, duration: 0.5, ease: 'power2.out' });
         }
 
@@ -379,24 +368,22 @@
         }
 
         function getAvatarText(username) {
-            return username.charAt(0).toUpperCase(); // Ambil huruf pertama, jadikan uppercase
+            return username.charAt(0).toUpperCase();
         }
 
         function generateAvatarColor(username) {
-            // Metode hash sederhana (bisa diganti dengan yang lebih canggih)
             let hash = 0;
             for (let i = 0; i < username.length; i++) {
                 hash = username.charCodeAt(i) + ((hash << 5) - hash);
             }
-            const color = `hsl(${hash % 360}, 70%, 60%)`; // Hue acak, saturation dan lightness tetap
+            const color = `hsl(${hash % 360}, 70%, 60%)`;
             return color;
         }
 
-        // Fungsi untuk menampilkan pesan dengan avatar dan timestamp
         function displayMessage(message) {
-             const currentUsername = localStorage.getItem('username'); //mendapatkan username
-            const avatarText = getAvatarText(currentUsername); // Ganti dengan logika avatar Anda
-            const avatarColor = generateAvatarColor(currentUsername); // Ganti dengan logika warna avatar Anda
+             const currentUsername = localStorage.getItem('username');
+            const avatarText = getAvatarText(currentUsername);
+            const avatarColor = generateAvatarColor(currentUsername);
 
             const messageDiv = document.createElement('div');
             messageDiv.className = 'message';
@@ -414,7 +401,7 @@
 
             const timestampDiv = document.createElement('div');
             timestampDiv.className = 'message-timestamp';
-            timestampDiv.textContent = formatTimestamp(message.timestamp); // Fungsi formatTimestamp di bawah
+            timestampDiv.textContent = formatTimestamp(message.timestamp);
 
             messageContentDiv.appendChild(textDiv);
             messageContentDiv.appendChild(timestampDiv);
@@ -424,10 +411,9 @@
 
             messagesDiv.appendChild(messageDiv);
 
-            gsap.from(messageDiv, { opacity: 0, x: -20, duration: 0.3, ease: 'power2.out' }); // Animasi
+            gsap.from(messageDiv, { opacity: 0, x: -20, duration: 0.3, ease: 'power2.out' });
         }
 
-        // Fungsi untuk memformat timestamp
         function formatTimestamp(timestamp) {
             const date = new Date(timestamp);
             const now = new Date();
@@ -440,11 +426,9 @@
             } else if (diffInSeconds < 86400) {
                 return Math.floor(diffInSeconds / 3600) + ' hours ago';
             } else {
-                // Format tanggal/waktu lengkap (bisa disesuaikan)
                 return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
             }
         }
-
 
         async function loadMessages() {
             const currentUsername = localStorage.getItem('username');
@@ -459,14 +443,12 @@
                 const data = await response.json();
 
                 if (response.ok) {
-                    messagesDiv.innerHTML = ''; // Bersihkan pesan sebelumnya
-                    data.messages.forEach(displayMessage); // Gunakan fungsi displayMessage
+                    messagesDiv.innerHTML = '';
+                    data.messages.forEach(displayMessage);
                 } else {
-                     console.error("Error loading messages. Response:", response);
                     showMessage(registerMessage,`Error loading messages: ${response.statusText}`, false)
                 }
             } catch(error) {
-                 console.error("Error loading messages:", error);
                 showMessage(registerMessage, `Error: ${error.message}`, false);
             } finally {
                 hideLoading();
@@ -484,8 +466,6 @@
                 showSection(registerSection);
             }
         }
-
-        // --- Event Listeners ---
 
         registerForm.addEventListener('submit', async (event) => {
              event.preventDefault();
@@ -563,9 +543,6 @@
             setTimeout(() => { copyUrlBtn.textContent = 'Copy URL'; }, 2000);
         });
 
-
-        // --- Cek URL dan localStorage saat halaman dimuat ---
-
         const path = window.location.pathname;
 
         if (path.startsWith('/user/')) {
@@ -583,7 +560,6 @@
                 sendMessageTitle.textContent = `Send Anonymous Message to ${data.username}`;
             })
             .catch(error => {
-                console.error("Error fetching username for title:", error);
                  sendMessageTitle.textContent = "Send Anonymous Message";
             })
         } else {
