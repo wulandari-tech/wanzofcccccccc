@@ -1,671 +1,243 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Wanzofc Chat</title>
+    <title>NGL Clone</title>
     <style>
-        /* CSS Reset (Minimal) */
-        body,
-        h1,
-        h2,
-        p,
-        ul,
-        li,
-        input,
-        button {
+        /* Styling (Sama seperti sebelumnya, tambahkan jika perlu) */
+        body {
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #f7f7f7;
             margin: 0;
-            padding: 0;
+            padding: 20px;
+        }
+
+        #container {
+            background-color: #fff;
+            border-radius: 12px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            max-width: 450px;
+            width: 100%;
+            padding: 30px;
+            text-align: center;
             box-sizing: border-box;
         }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #121212;
-            color: #ffffff;
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-            overflow: hidden;
+        /* ... (CSS lainnya) ... */
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
         }
 
-        /* Header */
-        .header {
-            background-color: #1f1f1f;
-            padding: 10px 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 1px solid #333;
+        .section {
+            margin-bottom: 25px;
         }
 
-        .header h1 {
-            font-size: 24px;
-            font-weight: 600;
+        input[type="text"],
+        textarea, input[type="username"] {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-sizing: border-box;
+            font-size: 16px;
+        }
+        textarea{
+             resize: vertical; /* User bisa resize secara vertikal*/
+             min-height: 80px; /* Tinggi minimal */
         }
 
-        .user-info {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        #createGroupBtn{
-            background: none;
+        button {
+            background-color: #8a2be2; /* Warna ungu mirip NGL */
+            color: #fff;
+            padding: 12px 20px;
             border: none;
-        }
-
-        #usernameDisplay {
-            font-weight: bold;
-        }
-
-        #logoutBtn, #createGroupBtn {
-            background-color: #3498db;
-            color: #fff;
-            border: none;
-            padding: 8px 12px;
-            border-radius: 5px;
+            border-radius: 8px;
             cursor: pointer;
-            transition: background-color 0.2s;
-        }
-      
-
-        #logoutBtn:hover, #createGroupBtn:hover {
-            background-color: #2980b9;
+            font-size: 16px;
+            transition: background-color 0.3s ease; /* Efek transisi */
         }
 
-        /* Main Container */
-        .main-container {
-            display: flex;
-            flex: 1;
-            overflow: hidden;
+        button:hover {
+            background-color: #6a1b9a; /* Warna lebih gelap saat hover */
         }
-
-        /* Sidebar (User List / Group List) */
-        .sidebar {
-            width: 250px;
-            background-color: #2c2c2c;
-            border-right: 1px solid #444;
-            overflow-y: auto;
-        }
-
-        .sidebar h2 {
-            padding: 10px 15px;
-            border-bottom: 1px solid #444;
-            font-size: 18px;
-            color: #aaa;
-        }
-
-        .sidebar ul {
-            list-style: none;
-        }
-
-        .sidebar li {
-            padding: 12px 15px;
-            cursor: pointer;
-            transition: background-color 0.2s;
-            border-bottom: 1px solid #333;
-            display: flex;
-            justify-content: space-between;
-        }
-
-        .sidebar li:hover {
-            background-color: #3a3a3a;
-        }
-
-        .sidebar li.active {
-            background-color: #3498db;
-            color: #fff;
-        }
-        .sidebar li.active .unread-count {
-            background-color: #fff;
-            color: #3498db;
-        }
-
-
-        .unread-count {
-            background-color: #e74c3c;
-            color: #fff;
-            border-radius: 50%;
-            padding: 2px 6px;
-            font-size: 12px;
-        }
-
-        /* Chat Area */
-        .chat-area {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-        }
-
-        /* Chat Header */
-        .chat-header {
-            background-color: #2c2c2c;
-            padding: 10px 15px;
-            border-bottom: 1px solid #444;
-            display: flex;
-            justify-content: space-between;
-        }
-
-        #currentRecipient {
-            font-weight: bold;
-            font-size: 1.1em;
-        }
-        /* Chat Messages */
-
         #messages {
-            flex: 1;
-            overflow-y: auto;
-            padding: 15px;
-            display: flex;
-            flex-direction: column;
-            /*  align-items: flex-start;  (default) */
+            margin-top: 20px;
         }
-        .message-wrapper{
-           width: 100%;
-           display: flex;
 
-           margin-bottom: 8px;
-        }
-        .message-wrapper.own-message{
-            justify-content: flex-end;
-        }
         .message {
-            max-width: 70%;
+            background-color: #eee;
             padding: 10px 15px;
-            border-radius: 15px;
-            background-color: #3a3a3a;
-            color: #fff;
-            word-wrap: break-word; /* Agar teks panjang tidak keluar dari container */
-            position: relative; /* Untuk bubble tail */
-
-        }
-
-        .message.own-message {
-            background-color: #3498db;
-            /*  align-self: flex-end;  (Pindahkan ke kanan) */
-        }
-
-        /* Bubble Tail */
-        .message::before {
-            content: '';
-            position: absolute;
-            top: 10px;
-            width: 0;
-            height: 0;
-            border-style: solid;
-            border-color: transparent;
-        }
-        /*  .own-message::before{
-            right: -10px;
-            border-width: 10px 0 10px 10px;
-            border-left-color: #3498db;
-        } */
-
-        .message:not(.own-message)::before {
-            left: -10px;
-            border-width: 10px 10px 10px 0;
-            border-right-color: #3a3a3a;
-        }
-
-        /* Message Meta (Timestamp, Sender -  optional) */
-        .message-meta {
-            font-size: 12px;
-            color: #aaa;
-            margin-top: 3px;
-        }
-
-        /* Input Area */
-        .input-area {
-            display: flex;
-            padding: 10px;
-            border-top: 1px solid #444;
-            background-color: #2c2c2c;
-        }
-
-        #messageInput {
-            flex: 1;
-            padding: 10px;
-            border: none;
-            border-radius: 5px;
-            background-color: #3a3a3a;
-            color: #fff;
-            margin-right: 10px;
-            outline: none;
-        }
-
-        #sendBtn {
-            background-color: #3498db;
-            color: #fff;
-            border: none;
-            padding: 10px 15px;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: background-color 0.2s;
-        }
-
-        #sendBtn:hover {
-            background-color: #2980b9;
-        }
-        /* Modal Styles */
-        .modal {
-            display: none; /* Hidden by default */
-            position: fixed;
-            z-index: 1;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            overflow: auto;
-            background-color: rgba(0, 0, 0, 0.7);
-        }
-
-        .modal-content {
-            background-color: #2c2c2c;
-            margin: 15% auto;
-            padding: 20px;
-            border-radius: 10px;
-            width: 80%;
-            max-width: 400px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-            position: relative; /* For close button */
-        }
-        .modal-content h2{
-            margin-bottom: 1rem;
-        }
-
-        .close-modal {
-            position: absolute;
-            top: 10px;
-            right: 15px;
-            font-size: 24px;
-            cursor: pointer;
-            color: #aaa;
-        }
-        .close-modal:hover{
-            color: #fff
-        }
-
-        .modal-input {
-            width: 100%;
-            padding: 10px;
             margin-bottom: 10px;
-            border: 1px solid #444;
-            border-radius: 5px;
-            background-color: #3a3a3a;
-            color: #fff;
-            outline: none;
+            border-radius: 8px;
+            text-align: left; /* Teks rata kiri */
         }
 
-        .modal-button {
-            background-color: #3498db;
-            color: #fff;
-            border: none;
-            padding: 10px 15px;
-            border-radius: 5px;
-            cursor: pointer;
-            width: 100%;
-            transition: background-color 0.2s;
+        #userLinkDisplay {
+            margin-top: 15px;
+            word-break: break-all;
+            color: #555;
         }
 
-        .modal-button:hover {
-            background-color: #2980b9;
+        #userLinkDisplay a {
+            color: #8a2be2;
+            text-decoration: none;
         }
 
-        #groupError, #groupSuccess{
-          padding: .5rem;
-          border-radius: .5rem;
-          margin-bottom: .5rem;
-          display: none;
-        }
-         #groupError{
-            background-color: #e74c3c;
-            color: #fff;
-        }
-        #groupSuccess{
-            background-color: #2ecc71;
-            color: #fff;
-
+        #userLinkDisplay a:hover {
+            text-decoration: underline;
         }
 
+        #sendResult{
+            color: green;
+        }
+        #error-message {
+            color: red;
+            margin-top: 10px;
+        }
+
+        /* Gaya untuk layar kecil (responsif) */
+        @media (max-width: 600px) {
+            #container {
+                padding: 20px;
+            }
+        }
     </style>
+     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
-
 <body>
-    <div class="header">
-        <h1>Wanzofc Chat</h1>
-        <div class="user-info">
-            <span id="usernameDisplay"></span>
-             <button id="createGroupBtn"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-users"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg></button>
-            <button id="logoutBtn">Logout</button>
+    <div id="container">
+        <h1>NGL Clone</h1>
+
+        <!-- Bagian: Daftar/Masuk -->
+        <div id="registerSection" class="section">
+            <h2>Register</h2>
+            <input type="username" id="registerUsername" placeholder="Enter your username">
+            <button id="registerBtn">Register</button>
+             <p id="error-message"></p>
+        </div>
+
+        <!-- Bagian: Link & Inbox (Setelah Daftar) -->
+        <div id="linkAndInboxSection" class="section" style="display: none;">
+            <div id="userLinkDisplay"></div>
+            <h2>Your Inbox</h2>
+            <button id="refreshBtn">Refresh Messages</button>
+            <div id="messages"></div>
+        </div>
+
+        <!-- Bagian: Kirim Pesan (Ditampilkan di halaman link) -->
+        <div id="sendMessageSection" class="section" style="display: none;">
+            <h2>Send Anonymous Message</h2>
+            <textarea id="messageInput" placeholder="Your message..."></textarea>
+            <button id="sendBtn">Send</button>
+             <p id="sendResult"></p>
         </div>
     </div>
 
-    <div class="main-container">
-        <div class="sidebar">
-            <h2>Users</h2>
-            <ul id="userList"></ul>
-            <h2>Groups</h2>
-            <ul id="groupList">
-              <li data-group="general" class="active">
-                #general
-              </li>
-            </ul>
-        </div>
-        <div class="chat-area">
-            <div class="chat-header">
-                <span id="currentRecipient">#general</span>
-            </div>
-            <div id="messages">
-            </div>
-            <div class="input-area">
-                <input type="text" id="messageInput" placeholder="Type your message...">
-                <button id="sendBtn">Send</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal for Username -->
-    <div id="usernameModal" class="modal">
-        <div class="modal-content">
-            <span class="close-modal">×</span>
-            <h2>Enter Username</h2>
-            <input type="text" id="usernameInput" class="modal-input" placeholder="Username">
-            <button id="usernameSubmit" class="modal-button">Join Chat</button>
-        </div>
-    </div>
-    <!-- Modal Create Group -->
-      <div id="createGroupModal" class="modal">
-        <div class="modal-content">
-            <span class="close-modal">×</span>
-            <h2>Create Group</h2>
-            <div id="groupError"></div>
-             <div id="groupSuccess"></div>
-            <input type="text" id="groupNameInput" class="modal-input" placeholder="Group Name">
-            <button id="createGroupSubmit" class="modal-button">Create</button>
-        </div>
-    </div>
-
-    <script src="/socket.io/socket.io.js"></script>
     <script>
-        const socket = io();
-
-        // DOM Elements
-        const usernameModal = document.getElementById('usernameModal');
-        const usernameInput = document.getElementById('usernameInput');
-        const usernameSubmit = document.getElementById('usernameSubmit');
-        const usernameDisplay = document.getElementById('usernameDisplay');
-        const logoutBtn = document.getElementById('logoutBtn');
-        const userList = document.getElementById('userList');
-        const groupList = document.getElementById('groupList');
-        const messages = document.getElementById('messages');
+       const registerSection = document.getElementById('registerSection');
+        const registerUsernameInput = document.getElementById('registerUsername');
+        const registerBtn = document.getElementById('registerBtn');
+        const linkAndInboxSection = document.getElementById('linkAndInboxSection');
+        const userLinkDisplay = document.getElementById('userLinkDisplay');
+        const refreshBtn = document.getElementById('refreshBtn');
+        const messagesDiv = document.getElementById('messages');
+        const sendMessageSection = document.getElementById('sendMessageSection');
         const messageInput = document.getElementById('messageInput');
         const sendBtn = document.getElementById('sendBtn');
-        const currentRecipientDisplay = document.getElementById('currentRecipient');
-        const createGroupBtn = document.getElementById("createGroupBtn")
-        const createGroupModal = document.getElementById("createGroupModal")
-        const groupNameInput = document.getElementById("groupNameInput")
-        const createGroupSubmit = document.getElementById("createGroupSubmit")
-        const groupError = document.getElementById("groupError")
-        const groupSuccess = document.getElementById("groupSuccess")
+        const sendResult = document.getElementById('sendResult');
+        const errorMessage = document.getElementById('error-message');
 
+        let currentUsername = null;
 
-        let currentUser = null;
-        let currentRecipient = 'general'; // Default to general
-        let currentChatType = 'group'; // 'private' or 'group'
-
-        // Show Username Modal on Load
-        usernameModal.style.display = 'block';
-
-        // Event: Handle Username Submission
-        usernameSubmit.addEventListener('click', () => {
-            const username = usernameInput.value.trim();
-            if (username) {
-                socket.emit('registerUsername', username);
+        // Event Listeners
+        registerBtn.addEventListener('click', async () => {
+            const username = registerUsernameInput.value;
+            errorMessage.textContent = ""; // Reset error message
+            if (!username) {
+                errorMessage.textContent = 'Please enter a username.';
+                return;
             }
-        });
-
-        // Event: Username Taken
-        socket.on('usernameTaken', () => {
-            alert('Username is already taken.  Please choose another.');
-        });
-
-        // Event: Username Registered Successfully
-        socket.on('usernameRegistered', (username) => {
-            currentUser = username;
-            usernameDisplay.textContent = currentUser;
-            usernameModal.style.display = 'none';
-            messageInput.focus(); // Focus on input
-        });
-
-        // Event: Logout
-        logoutBtn.addEventListener('click', () => {
-            socket.emit('logout');
-            currentUser = null;
-            usernameDisplay.textContent = '';
-            userList.innerHTML = ''; // Clear user list
-            groupList.innerHTML = `<li data-group="general" class="active">#general</li>`; // Reset group list
-            messages.innerHTML = ''; // Clear messages
-            currentRecipient = 'general';
-            currentChatType = 'group';
-            currentRecipientDisplay.textContent = '#general';
-            usernameModal.style.display = 'block'; // Show username modal again
-        });
 
 
-        // Event:  Update Online User List
-        socket.on('onlineUsers', (users) => {
-           renderUserList(users)
-        });
-        function renderUserList(users){
-             userList.innerHTML = ''; // Clear current list
-            users.forEach(user => {
-                if (user !== currentUser) { // Don't show self
-                    const li = document.createElement('li');
-                    li.textContent = user;
-                    li.dataset.username = user; // Store username for later
-                    li.addEventListener('click', startPrivateChat);
-                    userList.appendChild(li);
-                }
+            const response = await fetch('/api/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username }),
             });
-        }
 
+            const data = await response.json();
 
-        // Event: Start Private Chat (Click on User)
-        function startPrivateChat() {
-            const recipient = this.dataset.username;
-            currentRecipient = recipient;
-            currentChatType = 'private';
-            currentRecipientDisplay.textContent = recipient;
-            messages.innerHTML = ''; // Clear current messages
-            // Request private chat history from server
-            socket.emit('requestPrivateChatHistory', recipient);
-            setActiveListItem(this); // Tambahkan class 'active'
-        }
-
-        function setActiveListItem(activeItem){
-              // Remove 'active' class from all list items
-            const allItems = document.querySelectorAll('.sidebar li');
-            allItems.forEach(item => item.classList.remove('active'));
-             // Add 'active' class to the clicked item
-            activeItem.classList.add('active');
-        }
-
-        // Event:  Receive Private Message
-        socket.on('privateMessage', (data) => {
-          //  if (currentChatType === 'private' && (data.sender === currentRecipient || data.recipient === currentRecipient)) {
-                appendMessage(data);
-          //  }
-        });
-
-        // Event: Receive Group Message
-        socket.on('groupMessage', (data) => {
-           // if (currentChatType === 'group' && data.groupName === currentRecipient) {
-                appendMessage(data);
-          //  }
-        });
-
-      socket.on('groupChatHistory', (history) => {
-            messages.innerHTML = ''; // Clear existing messages
-            history.forEach(msg => appendMessage(msg));
-            messages.scrollTop = messages.scrollHeight; // Scroll to bottom
-        });
-
-        socket.on('privateChatHistory', (history) => {
-          messages.innerHTML = ''; // Clear existing messages
-          history.forEach(msg => appendMessage(msg));
-          messages.scrollTop = messages.scrollHeight;
-        })
-
-        // Event: Send Message (Click or Enter)
-        sendBtn.addEventListener('click', sendMessage);
-        messageInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                sendMessage();
-            }
-        });
-
-        function sendMessage() {
-            const message = messageInput.value.trim();
-            if (!message) return;
-
-            if (currentChatType === 'private') {
-                socket.emit('privateMessage', { recipient: currentRecipient, message });
+            if (response.ok) {
+                currentUsername = data.username;
+                userLinkDisplay.innerHTML = `Your link: <a href="/?user=${data.userId}" target="_blank">${window.location.origin}/?user=${data.userId}</a>`;
+                registerSection.style.display = 'none';
+                linkAndInboxSection.style.display = 'block';
+                loadMessages();
             } else {
-                socket.emit('groupMessage', { groupName: currentRecipient, message });
+                errorMessage.textContent = data.error || 'Registration failed.';
             }
-
-            messageInput.value = ''; // Clear input
-        }
-
-
-        function appendMessage(data) {
-           // console.log("append", data)
-            const messageWrapper = document.createElement('div');
-            messageWrapper.classList.add("message-wrapper")
-            const messageDiv = document.createElement('div');
-            messageDiv.classList.add('message');
-
-            if (data.sender === currentUser) {
-                messageWrapper.classList.add('own-message');
-            }
-
-            let text = '';
-            if(currentChatType === 'group' && data.sender !== currentUser) {
-                text += `<strong>${data.sender}: </strong>`;
-            }
-            text += data.message;
-
-            messageDiv.innerHTML = text;
-
-            const metaDiv = document.createElement('div');
-            metaDiv.classList.add('message-meta');
-            metaDiv.textContent = new Date(data.timestamp).toLocaleTimeString();
-            messageDiv.appendChild(metaDiv);
-            messageWrapper.appendChild(messageDiv)
-
-            messages.appendChild(messageWrapper);
-            messages.scrollTop = messages.scrollHeight; // Scroll to bottom
-        }
-
-        // Event: Group Creation (Modal)
-
-        createGroupBtn.addEventListener("click", () => {
-            createGroupModal.style.display = "block";
-        })
-
-        createGroupSubmit.addEventListener("click", () => {
-          const groupName = groupNameInput.value.trim()
-          socket.emit("createGroup", groupName)
-
-        })
-
-        socket.on("groupError", (message) => {
-          groupError.style.display = "block"
-          groupError.textContent = message
-          setTimeout(()=> {
-            groupError.style.display = "none"
-          }, 3000)
-        })
-        socket.on('groupExists', (groupName) => {
-            groupError.style.display = 'block';
-            groupError.textContent = `Group "${groupName}" already exists.`;
-             setTimeout(()=> {
-                groupError.style.display = "none"
-              }, 3000)
         });
 
-        socket.on('groupCreated', (groupName) => {
-            groupSuccess.style.display = 'block';
-            groupSuccess.textContent = `Group "${groupName}" created successfully!`;
-             setTimeout(()=> {
-                groupSuccess.style.display = "none"
-                createGroupModal.style.display = 'none'; // Hide modal
-                groupNameInput.value = '';
-              }, 3000)
-            joinGroup(groupName)
-        });
-         socket.on('groupListUpdate', (groupNames) => {
-            renderGroupList(groupNames);
-        });
+        sendBtn.addEventListener('click', async () => {
+            const userId = new URLSearchParams(window.location.search).get('user');
+            const message = messageInput.value;
 
-        function renderGroupList(groupNames){
-           groupList.innerHTML = `<li data-group="general" class="${currentRecipient === 'general' ? 'active' : ''}">#general</li>`;  //Keep General
-            groupNames.forEach(groupName => {
-                if (groupName !== 'general') { // Don't duplicate general
-                    const li = document.createElement('li');
-                    li.textContent = `#${groupName}`;
-                    li.dataset.group = groupName;
-                     if (groupName === currentRecipient) {
-                        li.classList.add('active');
-                    }
-                    li.addEventListener('click', () => joinGroup(groupName));
-                    groupList.appendChild(li);
-                }
+            if (!message) {
+               sendResult.textContent = 'Please enter a message'
+                return;
+            }
+            sendResult.textContent = 'Sending...'
+
+            const response = await fetch(`/api/send/${userId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message }),
             });
-        }
 
-          // Event: Join Group (Click on Group)
-        function joinGroup(groupName) {
-            currentRecipient = groupName;
-            currentChatType = 'group';
-            currentRecipientDisplay.textContent = `#${groupName}`;
-            messages.innerHTML = ''; // Clear messages
-            socket.emit('joinGroup', groupName);
-            // Find the list item and set it as active
-            const listItem = document.querySelector(`.sidebar li[data-group="${groupName}"]`);
-            if(listItem) {
-                setActiveListItem(listItem);
-            }
-
-        }
-        socket.on('joinedGroup', (groupName) => {
-            console.log(`Joined group: ${groupName}`);
-            // You can update UI here (e.g., highlight the joined group)
-        });
-
-
-        // Close Modal Event
-        document.querySelectorAll('.close-modal').forEach(closeBtn => {
-            closeBtn.addEventListener('click', () => {
-                closeBtn.closest('.modal').style.display = 'none';
-                 groupNameInput.value = '';
-                 groupError.style.display = "none"
-                 groupSuccess.style.display = "none"
-            });
-        });
-          // Close modal if clicked outside
-        window.addEventListener('click', (event) => {
-            if (event.target.classList.contains('modal')) {
-                event.target.style.display = 'none';
-                groupNameInput.value = '';
-                groupError.style.display = "none";
-                groupSuccess.style.display = "none"
+            const result = await response.json();
+            sendResult.textContent = '';
+            if (response.ok) {
+                messageInput.value = '';
+                sendResult.textContent = 'Message sent successfully!';
+            } else {
+                alert(result.error || 'Failed to send message.');
             }
         });
+
+        refreshBtn.addEventListener('click', loadMessages);
+
+        async function loadMessages() {
+            if (!currentUsername) return;
+
+            const response = await fetch(`/api/messages/${currentUsername}`);
+            const data = await response.json();
+
+            if (response.ok) {
+                messagesDiv.innerHTML = data.messages.map(msg => `<div class="message">${msg.text}</div>`).join('');
+            } else {
+                messagesDiv.innerHTML = 'Error loading messages.';
+            }
+        }
+
+        // Cek URL parameter saat halaman dimuat
+        const params = new URLSearchParams(window.location.search);
+        const userFromUrl = params.get('user');
+
+        if (userFromUrl) {
+            // Sembunyikan bagian register, tampilkan bagian kirim pesan
+            registerSection.style.display = 'none';
+            sendMessageSection.style.display = 'block';
+        } else {
+            // Tampilkan bagian register
+            registerSection.style.display = 'block';
+        }
 
     </script>
 </body>
-
 </html>
