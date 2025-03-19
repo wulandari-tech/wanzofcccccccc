@@ -1,75 +1,78 @@
 const express = require('express');
-const bodyParser = require('body-parser');
-const cors = require('cors');
+const multer = require('multer');
 const path = require('path');
+const fs = require('fs');
 
 const app = express();
 const port = 3000;
 
-app.use(bodyParser.json());
-app.use(cors());
-app.use(express.static(__dirname));
-
-// In-memory database (HANYA UNTUK DEMO)
-const users = {}; // { username: { messages: [] } }  <-- Struktur lebih sederhana
-
-// API Endpoints
-app.post('/api/register', (req, res) => {
-    const { username } = req.body;
-
-    if (!username || username.trim() === "") {
-        return res.status(400).json({ error: 'Username is required' });
+// Konfigurasi Multer
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => { cb(null, '/'); }, // Simpan di root
+    filename: (req, file, cb) => {
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        cb(null, uniqueSuffix + path.extname(file.originalname));
     }
-    if (users[username]) {
-        return res.status(409).json({ error: 'Username already taken' });
-    }
-
-    users[username] = { messages: [] }; // Simpan hanya username dan messages
-    res.json({ username }); // Kembalikan hanya username
 });
 
-app.post('/api/send/:username', (req, res) => {
-    const { username } = req.params;
-    const { message } = req.body;
+const upload = multer({
+    storage: storage,
+    fileFilter: (req, file, cb) => {
+        const allowedMimeTypes = [
+            'image/jpeg', 'image/png', 'image/gif',
+            'audio/mpeg', 'audio/mp3',
+            'video/mp4', 'video/webm',
+        ];
+        if (allowedMimeTypes.includes(file.mimetype)) { cb(null, true); }
+        else { cb(new Error('Jenis file tidak diizinkan!'), false); }
+    },
+    limits: { fileSize: 10 * 1024 * 1024 } // 10 MB
+});
 
-    if (!users[username]) {
-        return res.status(404).json({ error: 'User not found' });
+// --- Routing ---
+
+// 1. Upload file (POST)
+app.post('/uploads', upload.single('file'), (req, res) => {
+    if (!req.file) {
+        return res.status(400).send({ message: 'Tidak ada file yang diunggah.' }); // Lebih baik dalam format JSON
     }
-    if(!message || message.trim() === ""){
-        return res.status(400).json({error: "Message is required"})
-    }
-
-    users[username].messages.push({ text: message, timestamp: new Date() });
-    res.json({ success: true });
+    const fileUrl = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
+    res.send({ message: 'File berhasil diunggah!', url: fileUrl });
 });
 
-app.get('/api/messages/:username', (req, res) => {
-    const { username } = req.params;
-    if (!users[username]) {
-        return res.status(404).json({ error: 'User not found' });
-    }
-    res.json({ messages: users[username].messages });
+// 2. Sajikan file yang diupload (GET)
+app.get('/uploads/:filename', (req, res) => {
+    const filename = req.params.filename;
+    const filePath = path.join(__dirname, filename);
+
+    fs.access(filePath, fs.constants.F_OK, (err) => {
+        if (err) {
+            return res.status(404).send({ message: 'File tidak ditemukan.' }); // JSON
+        }
+        res.sendFile(filePath);
+    });
 });
 
-// API baru untuk mendapatkan username dari URL
-app.get('/api/user/:username', (req, res) => {
-    const { username } = req.params;
-    if (!users[username]) {
-        return res.status(404).json({ error: 'User not found' });
-    }
-    res.json({ username }); // Kembalikan username
+// 3. Sajikan index.html atau 404
+app.get('/', (req, res, next) => { // Tambahkan 'next'
+    const indexPath = path.join(__dirname, 'index.html');
+
+    fs.access(indexPath, fs.constants.F_OK, (err) => {
+        if (err) {
+            next(); // Lanjutkan ke error handler 404
+        } else {
+            res.sendFile(indexPath);
+        }
+    });
 });
 
-// Route untuk melayani index.html
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'index.html'));
+// 4. Error handler 404 (Custom)
+app.use((req, res, next) => {
+    res.status(404).send({ message: '404 Not Found - Halaman tidak ditemukan.' }); // JSON
 });
 
-// Route untuk melayani halaman user (dengan username di URL)
-app.get('/user/:username', (req, res) => {
-    res.sendFile(path.join(__dirname, 'index.html'));
-});
 
+// Jalankan server
 app.listen(port, () => {
-    console.log(`Server running at http://localhost:${port}`);
+    console.log(`Server berjalan di http://localhost:${port}`);
 });
