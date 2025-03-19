@@ -1,13 +1,12 @@
 const express = require('express');
 const multer = require('multer');
 const path = require('path');
-const fs = require('fs'); // Untuk operasi filesystem
+const fs = require('fs');
 
 const app = express();
 const port = 3000;
-const uploadDir = path.join(__dirname, 'uploads'); // Path absolut ke folder uploads
+const uploadDir = path.join(__dirname, 'uploads');
 
-// Fungsi untuk memastikan direktori uploads ada
 function ensureUploadsDirExists() {
   if (!fs.existsSync(uploadDir)) {
     try {
@@ -15,17 +14,16 @@ function ensureUploadsDirExists() {
       console.log("Direktori 'uploads' berhasil dibuat.");
     } catch (err) {
       console.error("Gagal membuat direktori 'uploads':", err);
-      process.exit(1); // Hentikan server jika gagal membuat direktori
+      process.exit(1);
     }
   }
 }
 
-ensureUploadsDirExists(); // Panggil fungsi saat server dimulai
+ensureUploadsDirExists();
 
-// Konfigurasi Multer
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, uploadDir); // Gunakan uploadDir yang sudah didefinisikan
+    cb(null, uploadDir);
   },
   filename: function (req, file, cb) {
     cb(null, Date.now() + '-' + file.originalname);
@@ -35,47 +33,56 @@ const storage = multer.diskStorage({
 const upload = multer({
   storage: storage,
   fileFilter: function (req, file, cb) {
-      const allowedMimeTypes = ['image/jpeg', 'image/png', 'image/gif'];
-      if (allowedMimeTypes.includes(file.mimetype)) {
-          cb(null, true);
-      } else {
-          cb(new Error('Jenis file tidak diizinkan. Hanya JPEG, PNG, dan GIF yang diperbolehkan.'), false);
-      }
+    const allowedMimeTypes = ['image/jpeg', 'image/png', 'image/gif'];
+    if (allowedMimeTypes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Jenis file tidak diizinkan. Hanya JPEG, PNG, dan GIF yang diperbolehkan.'), false);
+    }
   },
-  limits: { fileSize: 1024 * 1024 * 5 } // Batas ukuran file 5MB
+  limits: { fileSize: 1024 * 1024 * 5 }
 });
 
-// Serve static files dari folder uploads
 app.use('/uploads', express.static(uploadDir));
+app.get('/', (req, res) => {
+  res.send(`
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>Upload Gambar</title>
+    </head>
+    <body>
+      <h1>Upload Gambar</h1>
+      <form action="/uploads" method="post" enctype="multipart/form-data">
+        <input type="file" name="gambar" accept="image/*">
+        <button type="submit">Upload</button>
+      </form>
+    </body>
+    </html>
+  `);
+});
 
-// Route untuk upload (hanya POST)
+
 app.post('/uploads', upload.single('gambar'), (req, res) => {
   if (!req.file) {
     return res.status(400).send('Tidak ada file yang diunggah atau jenis file tidak valid.');
   }
 
-  // Buat URL gambar
   const imageUrl = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
 
-  // Kirim respons JSON
   res.json({
     message: 'File berhasil diunggah!',
     imageUrl: imageUrl,
   });
 });
 
-// Error handling untuk Multer errors
 app.use((err, req, res, next) => {
   if (err instanceof multer.MulterError) {
-    // A Multer error occurred when uploading.
-    res.status(400).send(err.message); // Kirim pesan error dari Multer
+    res.status(400).send(err.message);
   } else if (err) {
-    // An unknown error occurred when uploading.
     res.status(500).send(err.message);
   }
 });
-
-
 
 app.listen(port, () => {
   console.log(`Server berjalan di http://localhost:${port}`);
