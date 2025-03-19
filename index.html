@@ -1,506 +1,266 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Wanzofc Upload</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+    <title>File Uploader</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     <style>
-       :root {
-            --deep-space-sparkle: #4A646C;
-            --dark-slate-blue: #483D8B;
-            /* --neon-lime: #BFFF00;  Removed as we're using a different scheme */
-        }
-
+        /* (Previous styles remain the same) */
         body {
-            font-family: 'Inter', sans-serif;
+            font-family: sans-serif;
+            background-color: #f4f4f4;
             margin: 0;
             padding: 0;
-            /* background: linear-gradient(135deg, var(--midnight-blue), var(--electric-purple)); */
-            background: linear-gradient(135deg, var(--deep-space-sparkle), var(--dark-slate-blue)); /* New gradient */
-            color: black; /* Main text color */
             display: flex;
-            justify-content: center;
             align-items: center;
+            justify-content: center;
             min-height: 100vh;
-            overflow: hidden;
         }
 
         .container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
             width: 90%;
-            max-width: 600px;
-            padding: 40px;
-            /* background-color: rgba(255, 255, 255, 0.1); */
-            background-color: rgba(255, 255, 255, 0.7); /* White with transparency */
-            border-radius: 20px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-            text-align: center;
-            opacity: 0;
-            position: relative;
+            /* Responsive width */
+            max-width: 500px;
+            /* Max width */
         }
 
         h1 {
-            font-size: 3rem;
-            margin-bottom: 30px;
-            font-weight: 700;
-            /* color: var(--neon-lime); */
-            color: black; /* Title color */
-        }
-
-        .upload-area {
-            border: 3px dashed rgba(0, 0, 0, 0.3); /* Darker dashed border */
-            border-radius: 15px;
-            padding: 40px 20px;
-            cursor: pointer;
-            transition: border-color 0.3s ease;
-        }
-
-        .upload-area:hover,
-        .upload-area.drag-over {
-            /* border-color: var(--neon-lime); */
-            border-color: var(--dark-slate-blue); /* Darker border on hover */
-        }
-
-
-        .upload-area p {
-            font-size: 1.2rem;
-            margin-bottom: 20px;
-            color: rgba(0, 0, 0, 0.8); /* Slightly darker text */
-        }
-
-        .upload-area .button {
-            display: inline-block;
-            padding: 12px 25px;
-            background-color: white; /* White button */
-            color: black;          /* Black text */
-            border: none;
-            border-radius: 8px;
-            font-size: 1rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: transform 0.2s ease, background-color 0.3s ease, color 0.3s ease; /* Add color transition */
-        }
-
-        .upload-area .button:hover {
-            transform: scale(1.05);
-            background-color: #f0f0f0; /* Slightly off-white on hover */
-            color: #333; /* Slightly darker text on hover */
-        }
-
-
-        #fileInput {
-            display: none;
-        }
-
-        .result-area {
-            margin-top: 40px;
-            display: none;
-        }
-
-        .result-link {
-            margin-bottom: 20px;
-        }
-
-        .result-link a {
-            /* color: white; */
-            color: black; /* Black link text */
-            text-decoration: none;
-            word-break: break-all;
-            display: inline-block;
-            margin-bottom: 5px;
-            transition: color 0.2s ease;
-        }
-
-        .result-link a:hover {
-            /* color: var(--neon-lime); */
-            color: var(--dark-slate-blue); /* Darker link on hover */
-        }
-
-        .copy-button {
-            background: none;
-            border: none;
-            /* color: rgba(255, 255, 255, 0.7); */
-             color: rgba(0, 0, 0, 0.7);
-            cursor: pointer;
-            font-size: 1rem;
-            margin-left: 10px;
-            transition: color 0.2s ease;
-            vertical-align: middle;
-        }
-
-        .copy-button:hover {
-            /* color: var(--neon-lime); */
-            color: var(--dark-slate-blue);
-        }
-
-        .copy-success {
-            /* color: var(--neon-lime); */
-            color: var(--dark-slate-blue);
-            margin-left: 10px;
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        }
-
-        /* API Key Button and Modal Styles */
-
-        .api-key-button {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            background: none;
-            border: none;
-            /* color: rgba(255, 255, 255, 0.7); */
-            color: rgba(255,255,255,0.9);
-            font-size: 1.5rem;
-            cursor: pointer;
-            transition: color 0.3s ease;
-            z-index: 10;
-        }
-
-        .api-key-button:hover {
-            /* color: var(--neon-lime); */
-            color: white; /* White on hover */
-        }
-
-        .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.5);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 20;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.3s ease;
-        }
-
-        .modal-overlay.active {
-            opacity: 1;
-            pointer-events: auto;
-        }
-
-        .modal {
-            /* background-color: var(--midnight-blue); */
-            background-color: rgba(255, 255, 255, 0.9); /* White with transparency */
-            padding: 30px;
-            border-radius: 15px;
-            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.4);
             text-align: center;
-            max-width: 90%;
-            width: 400px;
-            transform: scale(0.8);
-            opacity: 0;
-            transition: transform 0.3s ease, opacity 0.3s ease;
-        }
-
-        .modal-overlay.active .modal {
-            transform: scale(1);
-            opacity: 1;
-        }
-
-        .modal h2 {
-            /* color: var(--neon-lime); */
-             color: black;
-            margin-bottom: 20px;
-            font-size: 1.8rem;
-        }
-
-        .modal p {
-            margin-bottom: 15px;
-              color: #333; /* Slightly darker text */
-        }
-
-        .modal .api-key {
-            font-weight: 600;
-            /* color: var(--neon-lime); */
-            color: var(--dark-slate-blue); /* Use the dark blue for API key */
-            word-break: break-all;
-            margin-bottom: 1.5rem;
-            font-size: 1.1rem;
-
-        }
-
-        .modal .copy-button {
-            margin-left: 0;
-            font-size: 1.2rem;
-        }
-
-        .modal .api-link {
-            /* color: white; */
-            color: black; /* Black link text */
-            text-decoration: none;
-            display: block;
-            margin-top: 1rem;
-            word-break: break-all;
-            transition: color 0.2s;
-
-        }
-
-        .modal .api-link:hover {
-            /* color: var(--neon-lime); */
-             color: var(--dark-slate-blue);
-        }
-
-        .modal .close-button {
-            /* background-color: var(--neon-lime); */
-            background-color: white; /* White button */
-            color: black;          /* Black text */
-            border: none;
-            padding: 10px 20px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: 600;
-            margin-top: 20px;
-            transition: background-color 0.3s ease, color 0.3s ease; /* Add color transition */
-        }
-        .modal .close-button:hover {
-            background-color: #f2f2f2; /* Slightly off-white */
-            color: #333; /* Slightly darker text */
-        }
-
-        /* Loading Styles */
-        .loading-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.8);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 30;
-            flex-direction: column;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.3s ease;
-        }
-
-        .loading-overlay.active {
-            opacity: 1;
-            pointer-events: auto;
-        }
-
-        .loading-spinner {
-            border: 8px solid rgba(255, 255, 255, 0.3);
-            border-top: 8px solid white; /* White spinner */
-            border-radius: 50%;
-            width: 60px;
-            height: 60px;
-            animation: spin 1s linear infinite;
-            margin-bottom: 20px;
-        }
-
-        .loading-percentage {
-            /* color: white; */
-            color: white;
-            font-size: 1.5rem;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        /* (Rest of the CSS - file list styles, etc. - remains largely the same,
-           but update colors to match the new scheme where necessary) */
-
-        .upload-area.uploading {
-            pointer-events: none;
-            opacity: 0.7;
-        }
-        .upload-area.uploading .button{
-          display: none;
-        }
-
-        .file-list {
-            margin-top: 30px;
-            text-align: left;
-        }
-
-        .file-list h2 {
-            /* color: var(--neon-lime); */
-            color: black; /* Black heading */
-            font-size: 1.5rem;
-            margin-bottom: 15px;
-        }
-
-        .file-list ul {
-            list-style: none;
-            padding: 0;
-        }
-
-        .file-list li {
-            background-color: rgba(255, 255, 255, 0.7); /* White with transparency */
-            padding: 10px;
-            margin-bottom: 5px;
-            border-radius: 5px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .file-list li a {
-            color: black; /* Black link text */
-            text-decoration: none;
-        }
-
-        .file-list li a:hover {
-            color: var(--dark-slate-blue); /* Darker link on hover */
-        }
-
-        .file-list li span{
+            margin-bottom: 30px;
             color: #333;
         }
 
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #555;
+        }
+
+        input[type="file"] {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+
+        button[type="submit"],
+        #generateApiKeyBtn {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            width: 100%;
+            font-size: 16px;
+        }
+
+        button[type="submit"]:hover,
+        #generateApiKeyBtn:hover {
+            background-color: #0056b3;
+        }
+
+        #fileUrlContainer {
+            margin-top: 20px;
+        }
+
+        #fileUrl {
+            width: calc(100% - 50px);
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+            margin-right: 5px;
+        }
+
+        #copyFileUrlBtn {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            padding: 10px;
+            vertical-align: top;
+        }
+
+        #copyFileUrlBtn:hover {
+            background-color: #0056b3;
+        }
+
+        .input-group {
+            display: flex;
+            align-items: center;
+        }
+
+
+        .api-key-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            cursor: pointer;
+            background: none;
+            border: none;
+            font-size: 1.5em;
+            color: #007bff;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.4);
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 500px;
+            border-radius: 5px;
+            position: relative;
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            position: absolute;
+            top: 5px;
+            right: 10px;
+            cursor: pointer;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        #apiKeyDisplay {
+            margin-bottom: 10px;
+            /* word-break: break-all;  Removed to prevent breaking in the middle of the key */
+            width: 100%;   /* Take full width */
+            padding: 8px;  /* Add padding */
+            box-sizing: border-box;  /* Include padding in width */
+        }
+
+
+        .modal-group {
+            margin-bottom: 15px;
+            /* Space between groups */
+            display: flex;
+            align-items: center;
+
+        }
+
+        .modal-label {
+            margin-right: 10px;
+            width: 80px;
+             /* Consistent label width */
+            text-align: right;
+
+        }
+
+        .modal-input {
+            flex-grow: 1;
+             /* Take remaining space */
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+
+        .modal-copy-btn {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            padding: 8px 12px;
+            margin-left: 5px; /* Space between input and button*/
+        }
+
+        .modal-copy-btn:hover {
+          background-color: #0056b3;
+        }
     </style>
 </head>
-<body>
-    <!-- Loading Overlay -->
-    <div class="loading-overlay" id="loadingOverlay">
-        <div class="loading-spinner"></div>
-        <div class="loading-percentage" id="loadingPercentage">0%</div>
-    </div>
 
+<body>
     <div class="container">
-        <button class="api-key-button" id="apiKeyButton"><i class="fas fa-key"></i></button>
-        <h1>Wanzofc Upload</h1>
+        <h1>File Uploader</h1>
+
+        <button class="api-key-btn" id="apiKeyBtn" title="Generate API Key"><i class="fas fa-key"></i></button>
+
+        <!-- API Key Modal -->
+       <div id="apiKeyModal" class="modal">
+            <div class="modal-content">
+                <span class="close" id="closeModalBtn">×</span>
+                <p>Your API Key:</p>
+
+                 <!-- API Key -->
+                <div class="modal-group">
+                    <label class="modal-label">API Key:</label>
+                    <input type="text" id="apiKeyDisplay" class="modal-input" readonly>
+                    <button class="modal-copy-btn" id="copyApiKeyBtn" title="Copy API Key"><i class="fas fa-copy"></i></button>
+                </div>
+
+                <!-- API URL -->
+                <div class="modal-group">
+                    <label class="modal-label">API URL:</label>
+                    <input type="text" id="apiUrlDisplay" class="modal-input" readonly>
+                    <button class="modal-copy-btn" id="copyApiUrlBtn" title="Copy API URL"><i class="fas fa-copy"></i></button>
+                </div>
+
+            </div>
+        </div>
+
+
 
         <form id="uploadForm" enctype="multipart/form-data">
-            <div class="upload-area" id="uploadArea">
-                <p>Seret dan lepas file di sini atau</p>
-                <button type="button" class="button" id="selectFileButton">Pilih File</button>
-                <input type="file" name="berkas" id="fileInput">
+            <div class="form-group">
+                <label for="fileInput">Pilih Berkas:</label>
+                <input type="file" id="fileInput" name="berkas" required>
             </div>
+            <button type="submit">Unggah</button>
         </form>
 
-        <div class="result-area" id="resultArea">
-            <!-- Hasil akan ditampilkan di sini -->
-        </div>
-         <!-- File List Display -->
-        <div class="file-list" id="fileListDisplay">
-            <h2>Uploaded Files</h2>
-            <ul>
-                <!-- File list items will be added here -->
-            </ul>
+        <div id="fileUrlContainer" class="input-group">
+            <input type="text" id="fileUrl" readonly>
+            <button id="copyFileUrlBtn" title="Copy File URL"><i class="fas fa-copy"></i></button>
         </div>
     </div>
 
-    <!-- Modal -->
-    <div class="modal-overlay" id="modalOverlay">
-        <div class="modal">
-            <h2>API Key</h2>
-            <p class="api-key" id="apiKey"></p> <!-- Display API key here -->
-             <button class="copy-button" id="copyApiKeyButton"><i class="fas fa-copy"></i></button>
-              <span class="copy-success">Tersalin!</span>
-            <button class="close-button" id="closeModalButton">Tutup</button>
-        </div>
-    </div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <script>
-        // --- GSAP Animations ---
-        gsap.from(".container", { duration: 1, y: -50, opacity: 0, ease: "power3.out" });
-
-        // --- DOM Elements ---
-        const uploadForm = document.getElementById('uploadForm');
-        const uploadArea = document.getElementById('uploadArea');
-        const fileInput = document.getElementById('fileInput');
-        const selectFileButton = document.getElementById('selectFileButton');
-        const resultArea = document.getElementById('resultArea');
-
-        //API Key
-        const apiKeyButton = document.getElementById('apiKeyButton');
-        const modalOverlay = document.getElementById('modalOverlay');
-        const apiKeyElement = document.getElementById('apiKey'); // Changed back to <p>
-        const copyApiKeyButton = document.getElementById('copyApiKeyButton');
-        const closeModalButton = document.getElementById('closeModalButton');
-
-        //Loading
-        const loadingOverlay = document.getElementById('loadingOverlay');
-        const loadingPercentage = document.getElementById('loadingPercentage');
-
-        //File List
-        const fileListDisplay = document.getElementById('fileListDisplay');
-
-        // --- Utility Functions ---
-
-        // Load API Key from localStorage
-        function loadApiKey() {
-            const savedApiKey = localStorage.getItem('apiKey');
-            if (savedApiKey) {
-                apiKeyElement.textContent = savedApiKey;
-                return savedApiKey; // Return the loaded API key
-            }
-            return null; // Return null if no API key is found
-        }
-
-        // Save API Key to localStorage
-        function saveApiKey(apiKey) {
-            localStorage.setItem('apiKey', apiKey);
-        }
-       // --- Fetch New API Key ---
-        async function fetchNewApiKey() {
-            try {
-                const response = await fetch('/generate-api-key');
-                if (!response.ok) {
-                    throw new Error('Failed to generate API key.');
-                }
-                const data = await response.json();
-                return data.apiKey; // Return the new API key
-            } catch (error) {
-                console.error('Error generating API key:', error);
-                alert('Gagal menghasilkan API key.');
-                return null;
-            }
-        }
-
-        // --- Event Listeners ---
-        // 1. Button Click (trigger file input)
-        selectFileButton.addEventListener('click', () => {
-            fileInput.click();
-        });
-
-        // 2. File Input Change
-        fileInput.addEventListener('change', () => {
-            if (fileInput.files.length > 0) {
-                uploadFile(fileInput.files[0]);
-            }
-        });
-
-        // 3. Drag and Drop
-        uploadArea.addEventListener('dragover', (e) => {
+        document.getElementById('uploadForm').addEventListener('submit', async function (e) {
             e.preventDefault();
-            uploadArea.classList.add('drag-over');
-        });
 
-        uploadArea.addEventListener('dragleave', () => {
-            uploadArea.classList.remove('drag-over');
-        });
-
-        uploadArea.addEventListener('drop', (e) => {
-            e.preventDefault();
-            uploadArea.classList.remove('drag-over');
-            const files = e.dataTransfer.files;
-            if (files.length > 0) {
-                uploadFile(files[0]);
-            }
-        });
-
-        // --- Upload Function (using EventSource for progress) ---
-       async function uploadFile(file) {
+            const fileInput = document.getElementById('fileInput');
             const formData = new FormData();
-            formData.append('berkas', file);
-
-            // Show loading page
-            loadingOverlay.classList.add('active');
-            loadingPercentage.textContent = '0%';
-            uploadArea.classList.add('uploading');
+            formData.append('berkas', fileInput.files[0]);
 
             try {
                 const response = await fetch('/uploads', {
@@ -508,190 +268,85 @@
                     body: formData,
                 });
 
-                loadingPercentage.textContent = '100%';
-
                 if (!response.ok) {
                     const errorData = await response.json();
-                    throw new Error(errorData.message || 'Gagal mengunggah berkas.');
+                    throw new Error(errorData.message || 'Gagal mengunggah file.');
+                }
+
+                const data = await response.json();
+                document.getElementById('fileUrl').value = data.fileUrl;
+            } catch (error) {
+                alert(error.message);
+            }
+        });
+
+
+
+        const apiKeyBtn = document.getElementById('apiKeyBtn');
+        const apiKeyModal = document.getElementById('apiKeyModal');
+        const closeModalBtn = document.getElementById('closeModalBtn');
+        const apiKeyDisplay = document.getElementById('apiKeyDisplay');
+        const copyApiKeyBtn = document.getElementById('copyApiKeyBtn');
+        const apiUrlDisplay = document.getElementById('apiUrlDisplay');  // New: API URL input
+        const copyApiUrlBtn = document.getElementById('copyApiUrlBtn'); // New: Copy API URL button
+        let generatedApiKey = null;
+
+
+        async function generateAndDisplayApiKey() {
+            try {
+                const response = await fetch('/generate-api-key');
+                if (!response.ok) {
+                    throw new Error("Failed to generate API key.");
                 }
                 const data = await response.json();
-                displayResult(data.fileUrl);
-                fetchFileList(); // Refresh file list after upload
-            } catch (error) {
-                resultArea.innerHTML = `<p style="color: red;">Error: ${error.message}</p>`;
-                gsap.fromTo(resultArea, {opacity: 0, y: 20}, {duration: 0.5, opacity: 1, y: 0});
+                generatedApiKey = data.apiKey;
+                apiKeyDisplay.value = generatedApiKey;
 
-            } finally {
-                   // Hide loading page, re-enable upload
-                setTimeout(()=>{
-                  loadingOverlay.classList.remove('active');
-                  uploadArea.classList.remove('uploading');
-                },400)
-                fileInput.value = ''; // Clear file input
+                // Construct the API URL (important: use template literals correctly)
+                apiUrlDisplay.value = `${window.location.origin}/api/v1/files?apiKey=${generatedApiKey}`;
 
-            }
-        }
-       // --- Display Result Function ---
-       function displayResult(fileUrl) {
-            const jsonUrl = fileUrl.substring(0, fileUrl.lastIndexOf("."));
-            resultArea.innerHTML = `
-                <div class="result-link">
-                    <a href="${fileUrl}" target="_blank">${fileUrl}</a>
-                    <button class="copy-button" data-url="${fileUrl}"><i class="fas fa-copy"></i></button>
-                    <span class="copy-success">Tersalin!</span>
-                </div>
-                <div class="result-link">
-                    <a href="${jsonUrl}" target="_blank">${jsonUrl}</a>
-                    <button class="copy-button" data-url="${jsonUrl}"><i class="fas fa-copy"></i></button>
-                    <span class="copy-success">Tersalin!</span>
-                </div>
-            `;
 
-            // Show the result area
-            resultArea.style.display = 'block';
-            gsap.fromTo(resultArea, { opacity: 0, y: 20 }, { duration: 0.5, opacity: 1, y: 0 });
-
-            // Add event listeners to copy buttons
-            const copyButtons = document.querySelectorAll('.copy-button');
-            copyButtons.forEach(button => {
-                button.addEventListener('click', () => {
-                    copyToClipboard(button.dataset.url, button.nextElementSibling);
-                });
-            });
-        }
-        // --- Copy to Clipboard Function ---
-
-        async function copyToClipboard(text, successElement) {
-            try {
-                await navigator.clipboard.writeText(text);
-                // Show success
-                gsap.to(successElement, { opacity: 1, duration: 0.3, onComplete: () => {
-                        gsap.to(successElement, { opacity: 0, duration: 1, delay: 1 });
-                    }});
-            } catch (err) {
-                console.error('Failed to copy: ', err);
-                alert('Gagal menyalin ke clipboard.'); // Fallback
-            }
-        }
-
-        // --- API Key Modal Logic ---
-
-        // 1. Show Modal
-          apiKeyButton.addEventListener('click', async () => {
-            let apiKey = loadApiKey(); // Try to load existing key
-            if (!apiKey) {
-                apiKey = await fetchNewApiKey(); // Generate new key if none exists
-                if (apiKey) {
-                    saveApiKey(apiKey);
-                    apiKeyElement.textContent = apiKey;
-                }
-            } else {
-                apiKeyElement.textContent = apiKey; // Display loaded key
-            }
-            modalOverlay.classList.add('active'); // Show modal
-            fetchFileList(); // Make sure file list is updated
-
-        });
-
-        // 2. Close Modal
-        closeModalButton.addEventListener('click', () => {
-            modalOverlay.classList.remove('active');
-        });
-
-        // 3. Copy API Key
-        copyApiKeyButton.addEventListener('click', () => {
-           copyToClipboard(apiKeyElement.textContent, copyApiKeyButton.nextElementSibling);
-        });
-       // --- Fetch File List (using API key) ---
-        async function fetchFileList() {
-            const apiKey = apiKeyElement.textContent;
-            if (!apiKey) {
-                fileListDisplay.innerHTML = `<h2>Uploaded Files</h2><ul><li>API Key belum diatur.</li></ul>`;
-                return; // Don't fetch if no API key
-            }
-
-            try {
-                const response = await fetch('/api/v1/files', {
-                    headers: {
-                        'x-api-key': apiKey
-                    }
-                });
-
-                if (!response.ok) {
-                     if (response.status === 401) {
-                        fileListDisplay.innerHTML = `<h2>Uploaded Files</h2><ul><li>API Key tidak valid.</li></ul>`;
-                     }else{
-                         const errorData = await response.json();
-                         throw new Error(errorData.message || 'Gagal mengambil daftar file.');
-                     }
-                    return;
-                }
-                const files = await response.json();
-                renderFileList(files);
+                apiKeyModal.style.display = "block";
 
             } catch (error) {
-                console.error('Error fetching file list:', error);
-                fileListDisplay.innerHTML = `<p style="color: red;">Error: ${error.message}</p>`;
-
+                alert(error.message);
             }
         }
-        // --- Render File List ---
 
-        function renderFileList(files) {
-            const ul = fileListDisplay.querySelector('ul');
-            ul.innerHTML = ''; // Clear previous list
+        apiKeyBtn.addEventListener('click', generateAndDisplayApiKey);
 
-            if (files.length === 0) {
-                ul.innerHTML = '<li>Tidak ada file yang diunggah.</li>';
-                return;
+        closeModalBtn.addEventListener('click', () => {
+            apiKeyModal.style.display = 'none';
+        });
+
+        copyApiKeyBtn.addEventListener('click', () => {
+            apiKeyDisplay.select();
+            document.execCommand('copy');
+            alert('API Key copied to clipboard!');
+        });
+
+        // Copy API URL (new)
+        copyApiUrlBtn.addEventListener('click', () => {
+            apiUrlDisplay.select();
+            document.execCommand('copy');
+            alert('API URL copied to clipboard!');
+        });
+
+
+        document.getElementById('copyFileUrlBtn').addEventListener('click', () => {
+            const fileUrlInput = document.getElementById('fileUrl');
+            fileUrlInput.select();
+            document.execCommand('copy');
+            alert('File URL copied to clipboard!');
+        });
+
+        window.addEventListener('click', (event) => {
+            if (event.target === apiKeyModal) {
+                apiKeyModal.style.display = 'none';
             }
-
-            files.forEach(file => {
-                const li = document.createElement('li');
-                const link = document.createElement('a');
-                link.href = file.url;
-                link.target = "_blank";
-                link.textContent = file.filename;
-
-                const sizeSpan = document.createElement('span');
-                sizeSpan.textContent = `(${formatBytes(file.size)})`;
-
-                li.appendChild(link);
-                li.appendChild(sizeSpan);
-                ul.appendChild(li);
-            });
-        }
-
-        // --- Helper function to format file sizes ---
-        function formatBytes(bytes, decimals = 2) {
-            if (bytes === 0) return '0 Bytes';
-
-            const k = 1024;
-            const dm = decimals < 0 ? 0 : decimals;
-            const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
-
-            const i = Math.floor(Math.log(bytes) / Math.log(k));
-
-            return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
-        }
-        // --- Initial Setup ---
-
-        async function initialize() {
-            let apiKey = loadApiKey();
-            if (!apiKey) {
-                apiKey = await fetchNewApiKey();
-                if (apiKey) {
-                    saveApiKey(apiKey);
-                }
-            }
-              if (apiKey) {
-                apiKeyElement.textContent = apiKey;
-                fetchFileList(); // Fetch only if API key is present
-            }
-
-        }
-        initialize();
+        });
 
     </script>
 </body>
+
 </html>
