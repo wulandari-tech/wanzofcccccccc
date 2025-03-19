@@ -1,114 +1,91 @@
 const express = require('express');
 const multer = require('multer');
 const path = require('path');
-const fs = require('fs');
 const crypto = require('crypto');
+
 const app = express();
 const port = 3000;
-const uploadDir = path.join(__dirname, 'uploads');
 
-// ... (Fungsi ensureUploadsDirExists dan generateRandomString, sama seperti sebelumnya)
-function ensureUploadsDirExists() {
-    if (!fs.existsSync(uploadDir)) {
-        try {
-            fs.mkdirSync(uploadDir, { recursive: true }); // Tambahkan recursive: true
-            console.log("Direktori 'uploads' berhasil dibuat.");
-        } catch (err) {
-            console.error("Gagal membuat direktori 'uploads':", err);
-            process.exit(1);
-        }
-    }
-}
-function generateRandomString(length = 4) {
+// --- In-Memory Storage (Penyimpanan di Memori) ---
+
+// Konfigurasi Multer untuk penyimpanan *dalam memori*.
+const storage = multer.memoryStorage();
+const upload = multer({
+    storage: storage,
+    limits: { fileSize: 1024 * 1024 * 20 } // Batas 20MB
+});
+
+// --- Simpan file di Map (sebagai database sementara) ---
+const uploadedFiles = new Map();
+
+// Fungsi untuk menghasilkan string acak (untuk ID file)
+function generateRandomString(length = 8) {
     return crypto.randomBytes(Math.ceil(length / 2))
         .toString('hex')
         .slice(0, length);
 }
-// Konfigurasi multer (sama seperti sebelumnya)
-const storage = multer.diskStorage({
-    destination: function (req, file, cb) {
-        cb(null, uploadDir);
-    },
-    filename: function (req, file, cb) {
-        const ext = path.extname(file.originalname);
-        const randomName = generateRandomString();
-        cb(null, randomName + ext);
-    }
-});
 
-const upload = multer({
-    storage: storage,
-    limits: { fileSize: 1024 * 1024 * 20 } // 20MB
-});
-// Middleware untuk static file, TAPI dengan opsi yang dimodifikasi
-app.use('/uploads', express.static(uploadDir, {
-    index: false,
-    redirect: false,
-    // Hapus setHeaders, kita akan tangani secara manual
-}));
+// --- ROUTES ---
 
-// Route untuk halaman utama (upload form) - PERBAIKAN DI SINI
+// 1. Halaman Utama (Form Upload)
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'index.html'));
+    res.sendFile(path.join(__dirname, 'index.html')); // Kirim file index.html (frontend)
 });
 
-// Route untuk menangani upload file
+// 2. Endpoint untuk Upload File (POST /uploads)
 app.post('/uploads', upload.single('berkas'), (req, res) => {
     if (!req.file) {
         return res.status(400).json({ message: 'Tidak ada file yang diunggah.' });
     }
 
-    const fileUrl = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
-    // Hanya kirim fileUrl ke halaman upload
-    res.json({
-        fileUrl: fileUrl
+    const fileId = generateRandomString(); // Buat ID unik untuk file
+    const fileUrl = `${req.protocol}://${req.get('host')}/uploads/${fileId}`;
+
+    // Simpan informasi file di Map
+    uploadedFiles.set(fileId, {
+        buffer: req.file.buffer, // Data file (buffer)
+        mimetype: req.file.mimetype, // MIME type
+        originalname: req.file.originalname, // Nama asli
+        size: req.file.size, //ukuran file
     });
+
+    res.json({ fileUrl }); // Kirim URL file
 });
 
-// Route untuk menampilkan file ATAU JSON, tergantung tipe konten
-app.get('/uploads/:filename', (req, res, next) => {
-    const { filename } = req.params;
-    const filePath = path.join(uploadDir, filename);
+// 3. Endpoint untuk Mengakses File (GET /uploads/:fileId)
+app.get('/uploads/:fileId', (req, res) => {
+    const { fileId } = req.params;
 
-    fs.stat(filePath, (err, stats) => {
-        if (err) {
-            if (err.code === 'ENOENT') {
-                return res.status(404).json({ message: 'File tidak ditemukan.' });
-            }
-            return next(err);
-        }
+    // Cek apakah file ada di Map
+    if (!uploadedFiles.has(fileId)) {
+        return res.status(404).json({ message: 'File tidak ditemukan.' });
+    }
 
-        if (!stats.isFile()) {
-            return res.status(404).json({ message: 'Bukan file.' });
-        }
-        const fileUrl = `${req.protocol}://${req.get('host')}/uploads/${filename}`;
+    const fileData = uploadedFiles.get(fileId); // Ambil data file
 
-        // Daftar MIME types yang akan ditampilkan langsung (preview)
-        const previewMimeTypes = [
-            'image/jpeg', 'image/png', 'image/gif', 'image/webp', // Gambar
-            'video/mp4', 'video/webm', 'video/ogg',             // Video
-            'audio/mpeg', 'audio/ogg', 'audio/wav', 'audio/webm'  // Audio
-        ];
-		const mimeType = req.file ? req.file.mimetype : "unknown"; //perbaikan
-        if (previewMimeTypes.includes(mimeType)) {
-            // Tampilkan langsung (seperti express.static)
-             res.sendFile(filePath);
-        } else {
-            // Kirim JSON metadata
-            res.json({
-                filename: filename,
-				originalName: req.file ? req.file.originalname : "unknown", //original name
-                size: stats.size,
-                mimeType: mimeType,
-                createdAt: stats.birthtime,
-                modifiedAt: stats.mtime,
-                fileUrl : fileUrl,
-            });
-        }
-    });
+    // Daftar MIME types untuk preview (seperti sebelumnya)
+    const previewMimeTypes = [
+        'image/jpeg', 'image/png', 'image/gif', 'image/webp',
+        'video/mp4', 'video/webm', 'video/ogg',
+        'audio/mpeg', 'audio/ogg', 'audio/wav', 'audio/webm'
+    ];
+
+    if (previewMimeTypes.includes(fileData.mimetype)) {
+        // Jika bisa di-preview, kirim langsung
+        res.setHeader('Content-Type', fileData.mimetype);
+        res.send(fileData.buffer);  // Kirim buffer file
+    } else {
+        // Jika tidak, kirim metadata (termasuk nama asli)
+
+      // Set header untuk download, dengan nama file asli
+        res.setHeader('Content-Disposition', `attachment; filename="${fileData.originalname}"`);
+        res.setHeader('Content-Type', 'application/octet-stream'); // Force download
+        res.send(fileData.buffer);
+    }
 });
 
-// ... (Middleware error handler, sama seperti sebelumnya)
+// --- ERROR HANDLING ---
+
 app.use((err, req, res, next) => {
     console.error(err);
     if (err instanceof multer.MulterError) {
@@ -117,6 +94,9 @@ app.use((err, req, res, next) => {
         res.status(500).json({ message: 'Terjadi kesalahan pada server.' });
     }
 });
+
+
+// --- START SERVER ---
 
 app.listen(port, () => {
     console.log(`Server berjalan di http://localhost:${port}`);
