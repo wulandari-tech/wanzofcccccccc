@@ -3,567 +3,392 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NGL Clone</title>
+    <title>Wanzofc Image</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" integrity="sha512-9usAa10IRO0HhonpyAIVpjrylPvoDwiPUiKdWk5t3PyolY1cOd4DSE0Ga+ri4AuTroPR5aQvXU9xC6qOPnzFeg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <style>
         body {
-            font-family: 'Inter', sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            background-color: #121212;
-            color: #fff;
+            font-family: sans-serif;
             margin: 0;
             padding: 20px;
-            overflow-x: hidden;
-        }
-         #particles-js {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            top: 0;
-            left: 0;
-            z-index: 0;
-        }
-
-        #container {
-            background-color: #1e1e1e;
-            border-radius: 12px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
-            max-width: 450px;
-            width: 100%;
-            padding: 30px;
-            text-align: center;
-            box-sizing: border-box;
-            position: relative;
-            z-index: 1;
+            background-color: #f4f4f4;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
 
         h1 {
-            color: #fff;
-            margin-bottom: 10px;
-        }
-
-        h2 {
-            color: #ddd;
+            color: #333;
             margin-bottom: 20px;
-            font-size: 1.1em;
-            font-weight: normal;
         }
 
-        .section {
-            margin-bottom: 25px;
-        }
-
-        input[type="text"],
-        textarea,
-        input[type="username"],
-        input[type="url"] {
-            width: 100%;
-            padding: 12px;
-            margin-bottom: 15px;
-            border: 1px solid #444;
+        #drop-area {
+            border: 2px dashed #ccc;
             border-radius: 8px;
-            box-sizing: border-box;
-            font-size: 16px;
-            background-color: #2a2a2a;
-            color: #fff;
+            padding: 40px;
+            text-align: center;
+            cursor: pointer;
+            background-color: white;
+            width: 80%;
+            max-width: 600px;
+            margin-bottom: 20px;
             transition: border-color 0.3s ease;
         }
 
-        input[type="text"]:focus,
-        textarea:focus,
-        input[type="username"]:focus,
-        input[type="url"]:focus {
-            border-color: #8a2be2;
-            outline: none;
+        #drop-area.drag-over {
+            border-color: #007bff; /* Warna saat drag-over */
+            background-color: #e0f2ff;
         }
 
-        textarea {
-            resize: vertical;
-            min-height: 80px;
-        }
-
-        button {
-            background-color: #8a2be2;
-            color: #fff;
-            padding: 12px 20px;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 16px;
-            transition: background-color 0.3s ease;
-            display: inline-block;
-            margin: 0 5px;
-        }
-
-        button:disabled {
-            background-color: #444;
-            cursor: not-allowed;
-        }
-        button:hover:not(:disabled) {
-             background-color: #6a1b9a;
-        }
-
-        #messages {
-            margin-top: 20px;
-        }
-
-        .message {
-            background-color: #2a2a2a;
-            padding: 10px 15px;
+        #drop-area i {
+            font-size: 4em;
+            color: #ccc;
             margin-bottom: 10px;
-            border-radius: 8px;
-            text-align: left;
+        }
+        #drop-area p{
+            margin: 5px 0;
+        }
+
+        #file-input {
+            display: none; /* Sembunyikan input file asli */
+        }
+
+        #preview {
             display: flex;
-            align-items: flex-start;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
         }
 
-        .message-content {
-            flex-grow: 1;
-        }
-
-        #userLinkDisplay {
-            margin-top: 15px;
-            word-break: break-all;
-            color: #ddd;
-        }
-
-        #copyUrlSection {
+        .preview-item {
+            position: relative;
+            width: 150px;
+            height: 150px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            overflow: hidden; /* Pastikan gambar/video tidak melebihi batas */
             display: flex;
             align-items: center;
-            margin-bottom: 15px;
-        }
-       #copyUrlSection input{
-            margin-bottom: 0px;
+            justify-content: center;
         }
 
-        #sendResult {
-            color: #4CAF50;
+        .preview-item img,
+        .preview-item video {
+            max-width: 100%;
+            max-height: 100%;
+            display: block; /* Hilangkan spasi ekstra di bawah gambar/video */
         }
 
-        #error-message {
-            color: #f44336;
-            margin-top: 10px;
-        }
-
-        #logoutBtn {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            background-color: #444;
-            color: #fff;
-        }
-
-        @media (max-width: 600px) {
-            #container {
-                padding: 20px;
-            }
-
-            button {
-                display: block;
-                width: 100%;
-                margin: 5px 0;
-            }
-        }
-
-          .message-box {
-            padding: 10px 15px;
-            margin-bottom: 15px;
-            border-radius: 8px;
-            text-align: center;
-            color: #fff;
-        }
-
-        .success-message {
-            background-color: #4CAF50;
-            border: 1px solid #388E3C;
-
-        }
-
-        .error-message {
-            background-color: #f44336;
-            border: 1px solid #d32f2f;
-
-        }
-
-        .loading-overlay {
+        .preview-item .progress-bar-container {
             position: absolute;
             top: 0;
             left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: rgba(0, 0, 0, 0.8);
-            display: none;
-            justify-content: center;
-            align-items: center;
-            border-radius: 12px;
-            z-index: 10;
-        }
-
-        .loader {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #8a2be2;
-            border-radius: 50%;
-            width: 30px;
-            height: 30px;
-            animation: spin 2s linear infinite;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        form {
             width: 100%;
+            height: 5px; /* Tinggi progress bar */
+            background-color: #eee;
+        }
+        .preview-item .progress-bar {
+            height: 100%;
+            width: 0;
+            background-color: #007bff; /* Warna progress bar */
+            transition: width 0.1s ease; /* Animasi halus */
         }
 
-        .avatar {
-            width: 30px;
-            height: 30px;
+        .preview-item .remove-button {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background-color: rgba(255, 255, 255, 0.7);
+            border: none;
             border-radius: 50%;
-            background-color: #8a2be2;
-            color: #fff;
+            width: 24px;
+            height: 24px;
             display: flex;
-            justify-content: center;
             align-items: center;
-            margin-right: 10px;
+            justify-content: center;
+            cursor: pointer;
+            color: #333;
             font-size: 14px;
         }
 
-        .message-timestamp {
-            font-size: 0.8em;
-            color: #aaa;
-            margin-top: 4px;
+        #status-message {
+            margin-top: 20px;
+            font-weight: bold;
+            color: #333;
         }
+        .file-info{
+            font-size: 0.8em;
+            margin-top: 5px;
+            color:#555;
+        }
+
+        #uploaded-links {
+            margin-top: 30px;
+            width: 80%;
+            max-width: 600px;
+        }
+
+        #uploaded-links ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        #uploaded-links li {
+            background-color: white;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+        #uploaded-links a {
+            text-decoration: none;
+            color: #007bff;
+            word-break: break-all; /* Agar URL panjang tidak merusak layout */
+        }
+         #uploaded-links button{
+            background: none;
+            border: none;
+            color: #007bff;
+            cursor: pointer;
+            margin-left: 10px;
+         }
     </style>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
 </head>
 <body>
-    <div id="particles-js"></div>
-    <div id="container">
-        <h1>NGL Clone</h1>
-        <div class="loading-overlay" id="loadingOverlay">
-            <div class="loader"></div>
-        </div>
+    <h1>Wanzofc Image</h1>
 
-        <button id="logoutBtn" style="display: none;">Logout</button>
+    <div id="drop-area">
+        <i class="fas fa-cloud-upload-alt"></i>
+        <p>Seret dan lepas file di sini, atau klik untuk memilih file.</p>
+        <p>(Maks. 10MB, Format: JPG, PNG, GIF, MP3, MP4, WEBM)</p>
+        <input type="file" id="file-input" multiple>
+    </div>
 
-        <div id="registerSection" class="section">
-            <h2>Register</h2>
-            <form id="registerForm">
-                <input type="username" id="registerUsername" placeholder="Enter your username" required>
-                <button type="submit">Register</button>
-                <div id="registerMessage" class="message-box" style="display: none;"></div>
-            </form>
-        </div>
+    <div id="preview"></div>
 
-          <div id="linkAndInboxSection" class="section" style="display: none;">
-            <h2>Your Inbox</h2>
-            <div id="copyUrlSection">
-                <input type="url" id="userLinkInput" readonly>
-                <button id="copyUrlBtn">Copy URL</button>
-            </div>
-            <button id="refreshBtn">Refresh Messages</button>
-            <div id="messages"></div>
-        </div>
+    <div id="status-message"></div>
 
-        <div id="sendMessageSection" class="section" style="display: none;">
-            <h2 id="sendMessageTitle">Send Anonymous Message</h2>
-             <form id="sendMessageForm">
-                <textarea id="messageInput" placeholder="Your message..." required></textarea>
-                <button type="submit">Send</button>
-                <div id="sendMessageResult" class="message-box" style="display: none;"></div>
-            </form>
-        </div>
+    <div id="uploaded-links">
+      <h2>Uploaded Files:</h2>
+      <ul></ul>
     </div>
 
     <script>
-        particlesJS('particles-js', {
-            particles: {
-                number: { value: 80, density: { enable: true, value_area: 800 } },
-                color: { value: ['#8a2be2', '#00ffff', '#00ff00', '#ffff00', '#ff00ff'] },
-                shape: { type: 'circle', stroke: { width: 0, color: '#000000' }, polygon: { nb_sides: 5 } },
-                opacity: { value: 0.5, random: true, anim: { enable: false, speed: 1, opacity_min: 0.1, sync: false } },
-                size: { value: 3, random: true, anim: { enable: true, speed: 10, size_min: 0.1, sync: false } },
-                line_linked: { enable: true, distance: 150, color: '#8a2be2', opacity: 0.4, width: 1 },
-                move: {
-                    enable: true,
-                    speed: 2,
-                    direction: 'none',
-                    random: true,
-                    straight: false,
-                    out_mode: 'out',
-                    bounce: false,
-                },
-            },
-            interactivity: {
-                detect_on: 'canvas',
-                events: { onhover: { enable: true, mode: 'repulse' }, onclick: { enable: true, mode: 'push' }, resize: true },
-                modes: {
-                    grab: { distance: 400, line_linked: { opacity: 1 } },
-                    bubble: { distance: 400, size: 40, duration: 2, opacity: 8, speed: 3 },
-                    repulse: { distance: 100, duration: 0.4 },
-                    push: { particles_nb: 4 },
-                    remove: { particles_nb: 2 },
-                },
-            },
-            retina_detect: true,
+        const dropArea = document.getElementById('drop-area');
+        const fileInput = document.getElementById('file-input');
+        const preview = document.getElementById('preview');
+        const statusMessage = document.getElementById('status-message');
+        const uploadedLinksList = document.getElementById('uploaded-links').querySelector('ul');
+        let filesToUpload = [];
+
+        // --- Event Listeners ---
+
+        // 1. Drag and Drop
+        dropArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropArea.classList.add('drag-over');
         });
 
-        const registerSection = document.getElementById('registerSection');
-        const registerForm = document.getElementById('registerForm');
-        const registerUsernameInput = document.getElementById('registerUsername');
-        const registerMessage = document.getElementById('registerMessage');
-        const linkAndInboxSection = document.getElementById('linkAndInboxSection');
-        const userLinkInput = document.getElementById('userLinkInput');
-        const copyUrlBtn = document.getElementById('copyUrlBtn');
-        const refreshBtn = document.getElementById('refreshBtn');
-        const messagesDiv = document.getElementById('messages');
-        const sendMessageSection = document.getElementById('sendMessageSection');
-        const sendMessageForm = document.getElementById('sendMessageForm');
-        const sendMessageTitle = document.getElementById('sendMessageTitle');
-        const messageInput = document.getElementById('messageInput');
-        const sendMessageResult = document.getElementById('sendMessageResult');
-        const logoutBtn = document.getElementById('logoutBtn');
-        const loadingOverlay = document.getElementById('loadingOverlay');
-
-        function showSection(section) {
-            registerSection.style.display = 'none';
-            linkAndInboxSection.style.display = 'none';
-            sendMessageSection.style.display = 'none';
-            section.style.display = 'block';
-
-            gsap.from(section, { opacity: 0, y: -20, duration: 0.5, ease: 'power2.out' });
-        }
-
-        function showLoading() {
-            loadingOverlay.style.display = 'flex';
-            document.querySelectorAll('button').forEach(button => button.disabled = true);
-
-        }
-
-        function hideLoading() {
-            loadingOverlay.style.display = 'none';
-            document.querySelectorAll('button').forEach(button => button.disabled = false);
-
-        }
-
-        function showMessage(element, message, isSuccess = true) {
-            element.textContent = message;
-            element.style.display = 'block';
-            element.className = isSuccess ? 'message-box success-message' : 'message-box error-message';
-        }
-
-        function hideMessage(element) {
-            element.style.display = 'none';
-        }
-
-        function setupLinkAndInbox(username) {
-            const userLink = `${window.location.origin}/user/${username}`;
-            userLinkInput.value = userLink;
-        }
-
-        function getAvatarText(username) {
-            return username.charAt(0).toUpperCase();
-        }
-
-        function generateAvatarColor(username) {
-            let hash = 0;
-            for (let i = 0; i < username.length; i++) {
-                hash = username.charCodeAt(i) + ((hash << 5) - hash);
-            }
-            const color = `hsl(${hash % 360}, 70%, 60%)`;
-            return color;
-        }
-
-        function displayMessage(message) {
-             const currentUsername = localStorage.getItem('username');
-            const avatarText = getAvatarText(currentUsername);
-            const avatarColor = generateAvatarColor(currentUsername);
-
-            const messageDiv = document.createElement('div');
-            messageDiv.className = 'message';
-
-            const avatarDiv = document.createElement('div');
-            avatarDiv.className = 'avatar';
-            avatarDiv.textContent = avatarText;
-            avatarDiv.style.backgroundColor = avatarColor;
-
-            const messageContentDiv = document.createElement('div');
-            messageContentDiv.className = 'message-content';
-
-            const textDiv = document.createElement('div');
-            textDiv.textContent = message.text;
-
-            const timestampDiv = document.createElement('div');
-            timestampDiv.className = 'message-timestamp';
-            timestampDiv.textContent = formatTimestamp(message.timestamp);
-
-            messageContentDiv.appendChild(textDiv);
-            messageContentDiv.appendChild(timestampDiv);
-
-            messageDiv.appendChild(avatarDiv);
-            messageDiv.appendChild(messageContentDiv);
-
-            messagesDiv.appendChild(messageDiv);
-
-            gsap.from(messageDiv, { opacity: 0, x: -20, duration: 0.3, ease: 'power2.out' });
-        }
-
-        function formatTimestamp(timestamp) {
-            const date = new Date(timestamp);
-            const now = new Date();
-            const diffInSeconds = Math.floor((now - date) / 1000);
-
-            if (diffInSeconds < 60) {
-                return 'just now';
-            } else if (diffInSeconds < 3600) {
-                return Math.floor(diffInSeconds / 60) + ' minutes ago';
-            } else if (diffInSeconds < 86400) {
-                return Math.floor(diffInSeconds / 3600) + ' hours ago';
-            } else {
-                return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
-            }
-        }
-
-        async function loadMessages() {
-            const currentUsername = localStorage.getItem('username');
-            if (!currentUsername) {
-                showSection(registerSection);
-                return;
-            }
-
-            showLoading();
-            try {
-                const response = await fetch(`/api/messages/${currentUsername}`);
-                const data = await response.json();
-
-                if (response.ok) {
-                    messagesDiv.innerHTML = '';
-                    data.messages.forEach(displayMessage);
-                } else {
-                    showMessage(registerMessage,`Error loading messages: ${response.statusText}`, false)
-                }
-            } catch(error) {
-                showMessage(registerMessage, `Error: ${error.message}`, false);
-            } finally {
-                hideLoading();
-            }
-        }
-
-       function checkLocalStorage() {
-            const username = localStorage.getItem('username');
-            if (username) {
-                showSection(linkAndInboxSection);
-                setupLinkAndInbox(username);
-                loadMessages();
-                logoutBtn.style.display = 'block';
-            } else {
-                showSection(registerSection);
-            }
-        }
-
-        registerForm.addEventListener('submit', async (event) => {
-             event.preventDefault();
-            const username = registerUsernameInput.value;
-
-            hideMessage(registerMessage);
-            showLoading();
-
-            try{
-                const response = await fetch('/api/register', {
-                    method : 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({username}),
-                });
-                const data = await response.json();
-
-                if(response.ok){
-                    localStorage.setItem('username', data.username);
-                    showSection(linkAndInboxSection);
-                    setupLinkAndInbox(data.username);
-                    loadMessages();
-                    logoutBtn.style.display = 'block';
-                } else {
-                    showMessage(registerMessage, data.error || 'Registration failed.', false);
-                }
-            } catch(error){
-                showMessage(registerMessage, 'An unexpected error occurred.', false);
-
-            } finally{
-                hideLoading();
-            }
+        dropArea.addEventListener('dragleave', () => {
+            dropArea.classList.remove('drag-over');
         });
 
-        sendMessageForm.addEventListener('submit', async (event) => {
-           event.preventDefault();
-            const username = window.location.pathname.split('/').pop();
-            const message = messageInput.value;
+        dropArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropArea.classList.remove('drag-over');
+            handleFiles(e.dataTransfer.files);
+        });
 
-            hideMessage(sendMessageResult);
-            showLoading();
+        // 2. Klik pada drop-area untuk membuka dialog file
+        dropArea.addEventListener('click', () => {
+            fileInput.click();
+        });
 
-            try {
-                const response = await fetch(`/api/send/${username}`, {
+        // 3.  Perubahan pada input file
+        fileInput.addEventListener('change', () => {
+            handleFiles(fileInput.files);
+        });
+
+        // --- Fungsi Utama ---
+        function handleFiles(files) {
+            ([...files]).forEach(file => {
+                if(filesToUpload.find(f => f.name === file.name)) {
+                    statusMessage.textContent = `File "${file.name}" sudah ada dalam antrean.`;
+                    statusMessage.style.color = 'orange';
+                    return; // Skip file yang duplikat
+                }
+
+                filesToUpload.push(file);
+                addFileToPreview(file);
+            });
+
+            fileInput.value = null; // Reset input file
+             //uploadFiles(); // Panggil uploadFiles() di sini
+
+             if (filesToUpload.length > 0){
+                uploadFiles();
+             }
+        }
+
+
+        function addFileToPreview(file) {
+            const previewItem = document.createElement('div');
+            previewItem.classList.add('preview-item');
+
+            const progressBarContainer = document.createElement('div');
+            progressBarContainer.classList.add('progress-bar-container');
+            const progressBar = document.createElement('div');
+            progressBar.classList.add('progress-bar');
+            progressBarContainer.appendChild(progressBar);
+            previewItem.appendChild(progressBarContainer);
+
+             // Tombol Hapus
+            const removeButton = document.createElement('button');
+            removeButton.classList.add('remove-button');
+            removeButton.innerHTML = '<i class="fas fa-times"></i>';
+            removeButton.addEventListener('click', (e) => {
+              e.stopPropagation(); // Penting agar klik pada tombol tidak memicu upload lagi.
+              removeFile(file, previewItem);
+            });
+            previewItem.appendChild(removeButton);
+
+
+            const reader = new FileReader();
+
+            reader.onload = (e) => {
+                let element;
+                if (file.type.startsWith('image/')) {
+                    element = document.createElement('img');
+                    element.src = e.target.result;
+                } else if (file.type.startsWith('video/')) {
+                    element = document.createElement('video');
+                    element.src = e.target.result;
+                    element.controls = true; // Tampilkan kontrol video
+                } else if (file.type.startsWith('audio/')) {
+                    element = document.createElement('audio');
+                    element.src = e.target.result;
+                    element.controls = true; // Tampilkan kontrol audio
+                } else {
+                    // Tipe file lain (tidak didukung)
+                    element = document.createElement('div');
+                    element.textContent = `[${file.type}] ${file.name}`;
+                }
+
+                const fileInfo = document.createElement('div');
+                fileInfo.classList.add('file-info');
+                fileInfo.textContent = `${file.name} (${formatBytes(file.size)})`;
+                previewItem.appendChild(fileInfo);
+
+                previewItem.appendChild(element);
+                preview.appendChild(previewItem);
+
+
+            };
+
+            reader.readAsDataURL(file);
+        }
+
+        function uploadFiles(){
+            statusMessage.textContent = 'Mengunggah...';
+            statusMessage.style.color = '#333';
+
+
+            filesToUpload.forEach((file, index) => {
+
+                const formData = new FormData();
+                formData.append('file', file);
+                const previewItem = preview.children[index]; // Dapatkan elemen preview yang sesuai
+                const progressBar = previewItem.querySelector('.progress-bar');
+
+                fetch('/uploads', {  // Ganti dengan URL endpoint Anda
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ message }),
+                    body: formData,
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! Status: ${response.status}`); // Tangani error HTTP
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    progressBar.style.width = '100%';
+                    statusMessage.textContent = 'Upload berhasil!';
+                    statusMessage.style.color = 'green';
+                    addUploadedLink(data.url, file.name);
+                    // Hapus dari antrean setelah berhasil diunggah
+                   removeFile(file, previewItem, false);
+
+                })
+                .catch(error => {
+                    console.error('Error saat upload:', error);
+                    progressBar.style.width = '100%';
+                    progressBar.style.backgroundColor = 'red'; // Tandai error
+                    statusMessage.textContent = `Error: ${error.message}`;
+                    statusMessage.style.color = 'red';
                 });
-                const result = await response.json();
+            });
+             filesToUpload = []; // Bersihkan array setelah upload
+        }
 
-                if (response.ok) {
-                    messageInput.value = '';
-                    showMessage(sendMessageResult, 'Message sent successfully!', true);
-                } else {
-                    showMessage(sendMessageResult, result.error || 'Failed to send message.', false);
-                }
-            } catch (error) {
-                showMessage(sendMessageResult, 'An unexpected error occurred.', false);
-            } finally {
-                hideLoading();
+
+        function removeFile(file, previewItem, removeFromServer = true) {
+            // Hapus dari array filesToUpload
+             const index = filesToUpload.indexOf(file);
+
+            if (index > -1) {
+                filesToUpload.splice(index, 1);
+
             }
-        });
 
-        refreshBtn.addEventListener('click', loadMessages);
+            // Hapus elemen preview dari DOM
+            previewItem.remove();
 
-        logoutBtn.addEventListener('click', () => {
-            localStorage.removeItem('username');
-            showSection(registerSection);
-            logoutBtn.style.display = 'none';
-        });
+            // (Opsional) Kirim request ke server untuk menghapus file, jika perlu
+            if (removeFromServer) {
+              // Implementasikan logika untuk menghapus file dari server di sini, jika diperlukan.
+              // Misalnya, menggunakan fetch() dengan method DELETE.
+            }
 
-        copyUrlBtn.addEventListener('click', () => {
-             userLinkInput.select();
-            document.execCommand('copy');
-            copyUrlBtn.textContent = 'Copied!';
-            setTimeout(() => { copyUrlBtn.textContent = 'Copy URL'; }, 2000);
-        });
+            if (filesToUpload.length === 0){
+                 statusMessage.textContent = '';
+            }
+        }
 
-        const path = window.location.pathname;
 
-        if (path.startsWith('/user/')) {
-            const username = path.split('/').pop();
-            showSection(sendMessageSection);
+        function addUploadedLink(url, fileName) {
+          const listItem = document.createElement('li');
+          const link = document.createElement('a');
+          link.href = url;
+          link.textContent = fileName;
+          link.target = "_blank"; // Buka di tab baru
 
-            fetch(`/api/user/${username}`)
-            .then(response => {
-                if(!response.ok){
-                    throw new Error("user not found")
-                }
-                return response.json();
-            })
-            .then(data => {
-                sendMessageTitle.textContent = `Send Anonymous Message to ${data.username}`;
-            })
-            .catch(error => {
-                 sendMessageTitle.textContent = "Send Anonymous Message";
-            })
-        } else {
-            checkLocalStorage();
+          const copyButton = document.createElement('button');
+            copyButton.innerHTML = '<i class="fas fa-copy"></i>';
+            copyButton.title = "Copy URL"; // Tooltip
+            copyButton.addEventListener('click', () => {
+                navigator.clipboard.writeText(url).then(() => {
+                    // (Opsional) Beri feedback visual bahwa URL sudah disalin
+                   copyButton.innerHTML = '<i class="fas fa-check"></i>'; // Ganti ikon
+                   setTimeout(()=> {copyButton.innerHTML = '<i class="fas fa-copy"></i>';}, 2000)
+
+                }).catch(err => {
+                    console.error('Gagal menyalin URL: ', err);
+                });
+            });
+
+            listItem.appendChild(link);
+            listItem.appendChild(copyButton);
+
+            uploadedLinksList.appendChild(listItem);
+        }
+
+        // Fungsi pembantu untuk memformat ukuran file
+        function formatBytes(bytes, decimals = 2) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const dm = decimals < 0 ? 0 : decimals;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
         }
     </script>
 </body>
