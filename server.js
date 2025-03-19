@@ -1,78 +1,64 @@
 const express = require('express');
 const multer = require('multer');
 const path = require('path');
-const fs = require('fs');
-
+const fs = require('fs'); 
 const app = express();
 const port = 3000;
-
-// Konfigurasi Multer
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => { cb(null, '/'); }, // Simpan di root
-    filename: (req, file, cb) => {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        cb(null, uniqueSuffix + path.extname(file.originalname));
+const uploadDir = path.join(__dirname, 'uploads');
+function ensureUploadsDirExists() {
+  if (!fs.existsSync(uploadDir)) {
+    try {
+      fs.mkdirSync(uploadDir);
+      console.log("Direktori 'uploads' berhasil dibuat.");
+    } catch (err) {
+      console.error("Gagal membuat direktori 'uploads':", err);
+      process.exit(1); 
     }
+  }
+}
+ensureUploadsDirExists(); 
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, uploadDir); 
+  },
+  filename: function (req, file, cb) {
+    cb(null, Date.now() + '-' + file.originalname);
+  }
 });
 
 const upload = multer({
-    storage: storage,
-    fileFilter: (req, file, cb) => {
-        const allowedMimeTypes = [
-            'image/jpeg', 'image/png', 'image/gif',
-            'audio/mpeg', 'audio/mp3',
-            'video/mp4', 'video/webm',
-        ];
-        if (allowedMimeTypes.includes(file.mimetype)) { cb(null, true); }
-        else { cb(new Error('Jenis file tidak diizinkan!'), false); }
-    },
-    limits: { fileSize: 10 * 1024 * 1024 } // 10 MB
+  storage: storage,
+  fileFilter: function (req, file, cb) {
+      const allowedMimeTypes = ['image/jpeg', 'image/png', 'image/gif'];
+      if (allowedMimeTypes.includes(file.mimetype)) {
+          cb(null, true);
+      } else {
+          cb(new Error('Jenis file tidak diizinkan. Hanya JPEG, PNG, dan GIF yang diperbolehkan.'), false);
+      }
+  },
+  limits: { fileSize: 1024 * 1024 * 200 } 
 });
-
-// --- Routing ---
-
-// 1. Upload file (POST)
-app.post('/uploads', upload.single('file'), (req, res) => {
-    if (!req.file) {
-        return res.status(400).send({ message: 'Tidak ada file yang diunggah.' }); // Lebih baik dalam format JSON
-    }
-    const fileUrl = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
-    res.send({ message: 'File berhasil diunggah!', url: fileUrl });
+app.use('/uploads', express.static(uploadDir));
+app.post('/uploads', upload.single('gambar'), (req, res) => {
+  if (!req.file) {
+    return res.status(400).send('Tidak ada file yang diunggah atau jenis file tidak valid.');
+  }
+  const imageUrl = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
+  res.json({
+    message: 'File berhasil diunggah!',
+    imageUrl: imageUrl,
+  });
 });
-
-// 2. Sajikan file yang diupload (GET)
-app.get('/uploads/:filename', (req, res) => {
-    const filename = req.params.filename;
-    const filePath = path.join(__dirname, filename);
-
-    fs.access(filePath, fs.constants.F_OK, (err) => {
-        if (err) {
-            return res.status(404).send({ message: 'File tidak ditemukan.' }); // JSON
-        }
-        res.sendFile(filePath);
-    });
-});
-
-// 3. Sajikan index.html atau 404
-app.get('/', (req, res, next) => { // Tambahkan 'next'
-    const indexPath = path.join(__dirname, 'index.html');
-
-    fs.access(indexPath, fs.constants.F_OK, (err) => {
-        if (err) {
-            next(); // Lanjutkan ke error handler 404
-        } else {
-            res.sendFile(indexPath);
-        }
-    });
-});
-
-// 4. Error handler 404 (Custom)
-app.use((req, res, next) => {
-    res.status(404).send({ message: '404 Not Found - Halaman tidak ditemukan.' }); // JSON
+app.use((err, req, res, next) => {
+  if (err instanceof multer.MulterError) {.
+    res.status(400).send(err.message); 
+  } else if (err) {.
+    res.status(500).send(err.message);
+  }
 });
 
 
-// Jalankan server
+
 app.listen(port, () => {
-    console.log(`Server berjalan di http://localhost:${port}`);
+  console.log(`Server berjalan di http://localhost:${port}`);
 });
