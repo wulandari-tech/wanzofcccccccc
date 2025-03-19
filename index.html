@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     <style>
-        /* (Previous styles remain the same) */
+        /* (Semua style sebelumnya tetap sama) */
         body {
             font-family: sans-serif;
             background-color: #f4f4f4;
@@ -161,9 +161,12 @@
         #apiKeyDisplay {
             margin-bottom: 10px;
             /* word-break: break-all;  Removed to prevent breaking in the middle of the key */
-            width: 100%;   /* Take full width */
-            padding: 8px;  /* Add padding */
-            box-sizing: border-box;  /* Include padding in width */
+            width: 100%;
+            /* Take full width */
+            padding: 8px;
+            /* Add padding */
+            box-sizing: border-box;
+            /* Include padding in width */
         }
 
 
@@ -178,14 +181,14 @@
         .modal-label {
             margin-right: 10px;
             width: 80px;
-             /* Consistent label width */
+            /* Consistent label width */
             text-align: right;
 
         }
 
         .modal-input {
             flex-grow: 1;
-             /* Take remaining space */
+            /* Take remaining space */
             padding: 8px;
             border: 1px solid #ddd;
             border-radius: 4px;
@@ -199,11 +202,12 @@
             border-radius: 4px;
             cursor: pointer;
             padding: 8px 12px;
-            margin-left: 5px; /* Space between input and button*/
+            margin-left: 5px;
+            /* Space between input and button*/
         }
 
         .modal-copy-btn:hover {
-          background-color: #0056b3;
+            background-color: #0056b3;
         }
     </style>
 </head>
@@ -212,26 +216,28 @@
     <div class="container">
         <h1>File Uploader</h1>
 
-        <button class="api-key-btn" id="apiKeyBtn" title="Generate API Key"><i class="fas fa-key"></i></button>
+        <button class="api-key-btn" id="apiKeyBtn" title="Show API Key"><i class="fas fa-key"></i></button>
 
         <!-- API Key Modal -->
-       <div id="apiKeyModal" class="modal">
+        <div id="apiKeyModal" class="modal">
             <div class="modal-content">
                 <span class="close" id="closeModalBtn">×</span>
                 <p>Your API Key:</p>
 
-                 <!-- API Key -->
+                <!-- API Key -->
                 <div class="modal-group">
                     <label class="modal-label">API Key:</label>
                     <input type="text" id="apiKeyDisplay" class="modal-input" readonly>
-                    <button class="modal-copy-btn" id="copyApiKeyBtn" title="Copy API Key"><i class="fas fa-copy"></i></button>
+                    <button class="modal-copy-btn" id="copyApiKeyBtn" title="Copy API Key"><i
+                            class="fas fa-copy"></i></button>
                 </div>
 
                 <!-- API URL -->
                 <div class="modal-group">
                     <label class="modal-label">API URL:</label>
                     <input type="text" id="apiUrlDisplay" class="modal-input" readonly>
-                    <button class="modal-copy-btn" id="copyApiUrlBtn" title="Copy API URL"><i class="fas fa-copy"></i></button>
+                    <button class="modal-copy-btn" id="copyApiUrlBtn" title="Copy API URL"><i
+                            class="fas fa-copy"></i></button>
                 </div>
 
             </div>
@@ -263,7 +269,7 @@
             formData.append('berkas', fileInput.files[0]);
 
             try {
-                const response = await fetch('/uploads', {
+                const response = await fetch('/uploads', {  // Tidak perlu mengirim API key di sini
                     method: 'POST',
                     body: formData,
                 });
@@ -287,24 +293,21 @@
         const closeModalBtn = document.getElementById('closeModalBtn');
         const apiKeyDisplay = document.getElementById('apiKeyDisplay');
         const copyApiKeyBtn = document.getElementById('copyApiKeyBtn');
-        const apiUrlDisplay = document.getElementById('apiUrlDisplay');  // New: API URL input
-        const copyApiUrlBtn = document.getElementById('copyApiUrlBtn'); // New: Copy API URL button
-        let generatedApiKey = null;
+        const apiUrlDisplay = document.getElementById('apiUrlDisplay');
+        const copyApiUrlBtn = document.getElementById('copyApiUrlBtn');
 
 
-        async function generateAndDisplayApiKey() {
+        async function getAndDisplayApiKey() {
             try {
-                const response = await fetch('/generate-api-key');
+                const response = await fetch('/get-api-key'); // Endpoint baru untuk *mendapatkan* API key
                 if (!response.ok) {
-                    throw new Error("Failed to generate API key.");
+                    throw new Error("Failed to retrieve API key.");
                 }
                 const data = await response.json();
-                generatedApiKey = data.apiKey;
-                apiKeyDisplay.value = generatedApiKey;
+                apiKeyDisplay.value = data.apiKey;
 
-                // Construct the API URL (important: use template literals correctly)
-                apiUrlDisplay.value = `${window.location.origin}/api/v1/files?apiKey=${generatedApiKey}`;
-
+                // Construct the API URL.  Gunakan lokasi saat ini.
+                apiUrlDisplay.value = `${window.location.origin}/api/v1/files?apiKey=${data.apiKey}`;
 
                 apiKeyModal.style.display = "block";
 
@@ -313,7 +316,7 @@
             }
         }
 
-        apiKeyBtn.addEventListener('click', generateAndDisplayApiKey);
+        apiKeyBtn.addEventListener('click', getAndDisplayApiKey); // Ganti nama fungsi
 
         closeModalBtn.addEventListener('click', () => {
             apiKeyModal.style.display = 'none';
@@ -325,7 +328,6 @@
             alert('API Key copied to clipboard!');
         });
 
-        // Copy API URL (new)
         copyApiUrlBtn.addEventListener('click', () => {
             apiUrlDisplay.select();
             document.execCommand('copy');
