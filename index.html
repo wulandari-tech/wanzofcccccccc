@@ -1,395 +1,89 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Wanzofc Image</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" integrity="sha512-9usAa10IRO0HhonpyAIVpjrylPvoDwiPUiKdWk5t3PyolY1cOd4DSE0Ga+ri4AuTroPR5aQvXU9xC6qOPnzFeg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <title>Upload File</title>
     <style>
-        body {
-            font-family: sans-serif;
-            margin: 0;
-            padding: 20px;
-            background-color: #f4f4f4;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        h1 {
-            color: #333;
-            margin-bottom: 20px;
-        }
-
-        #drop-area {
-            border: 2px dashed #ccc;
-            border-radius: 8px;
-            padding: 40px;
-            text-align: center;
-            cursor: pointer;
-            background-color: white;
-            width: 80%;
-            max-width: 600px;
-            margin-bottom: 20px;
-            transition: border-color 0.3s ease;
-        }
-
-        #drop-area.drag-over {
-            border-color: #007bff; /* Warna saat drag-over */
-            background-color: #e0f2ff;
-        }
-
-        #drop-area i {
-            font-size: 4em;
-            color: #ccc;
-            margin-bottom: 10px;
-        }
-        #drop-area p{
-            margin: 5px 0;
-        }
-
-        #file-input {
-            display: none; /* Sembunyikan input file asli */
-        }
-
-        #preview {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            gap: 10px;
-        }
-
-        .preview-item {
-            position: relative;
-            width: 150px;
-            height: 150px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            overflow: hidden; /* Pastikan gambar/video tidak melebihi batas */
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .preview-item img,
-        .preview-item video {
-            max-width: 100%;
-            max-height: 100%;
-            display: block; /* Hilangkan spasi ekstra di bawah gambar/video */
-        }
-
-        .preview-item .progress-bar-container {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 5px; /* Tinggi progress bar */
-            background-color: #eee;
-        }
-        .preview-item .progress-bar {
-            height: 100%;
-            width: 0;
-            background-color: #007bff; /* Warna progress bar */
-            transition: width 0.1s ease; /* Animasi halus */
-        }
-
-        .preview-item .remove-button {
-            position: absolute;
-            top: 5px;
-            right: 5px;
-            background-color: rgba(255, 255, 255, 0.7);
-            border: none;
-            border-radius: 50%;
-            width: 24px;
-            height: 24px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            color: #333;
-            font-size: 14px;
-        }
-
-        #status-message {
-            margin-top: 20px;
-            font-weight: bold;
-            color: #333;
-        }
-        .file-info{
-            font-size: 0.8em;
-            margin-top: 5px;
-            color:#555;
-        }
-
-        #uploaded-links {
-            margin-top: 30px;
-            width: 80%;
-            max-width: 600px;
-        }
-
-        #uploaded-links ul {
-            list-style: none;
-            padding: 0;
-        }
-
-        #uploaded-links li {
-            background-color: white;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            padding: 10px;
-            margin-bottom: 10px;
-        }
-        #uploaded-links a {
-            text-decoration: none;
-            color: #007bff;
-            word-break: break-all; /* Agar URL panjang tidak merusak layout */
-        }
-         #uploaded-links button{
-            background: none;
-            border: none;
-            color: #007bff;
-            cursor: pointer;
-            margin-left: 10px;
-         }
+        body { font-family: sans-serif; }
+        .container { max-width: 500px; margin: 50px auto; padding: 20px; border: 1px solid #ccc; border-radius: 5px; }
+        h1 { text-align: center; margin-bottom: 30px; }
+        input[type="file"] { margin-bottom: 15px; }
+        button { padding: 10px 15px; background-color: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        button:disabled { background-color: #cccccc; cursor: not-allowed; }
+        #result { margin-top: 30px; display: none; } /* Sembunyikan secara default */
+        #fileUrl { width: 100%; padding: 8px; margin-bottom: 10px; box-sizing: border-box; }
+        #copyButton { margin-top: 5px; }
+        #message{margin-top: 1rem;}
     </style>
 </head>
 <body>
-    <h1>Wanzofc Image</h1>
+    <div class="container">
+        <h1>Upload File</h1>
+        <form id="uploadForm">
+            <input type="file" name="berkas" accept="*/*">
+            <button type="submit">Upload</button>
+        </form>
 
-    <div id="drop-area">
-        <i class="fas fa-cloud-upload-alt"></i>
-        <p>Seret dan lepas file di sini, atau klik untuk memilih file.</p>
-        <p>(Maks. 10MB, Format: JPG, PNG, GIF, MP3, MP4, WEBM)</p>
-        <input type="file" id="file-input" multiple>
-    </div>
-
-    <div id="preview"></div>
-
-    <div id="status-message"></div>
-
-    <div id="uploaded-links">
-      <h2>Uploaded Files:</h2>
-      <ul></ul>
+        <div id="result">
+            <h2>Hasil Upload:</h2>
+            <input type="text" id="fileUrl" readonly>
+            <button id="copyButton">Copy URL</button>
+             <p id="message"></p>
+        </div>
     </div>
 
     <script>
-        const dropArea = document.getElementById('drop-area');
-        const fileInput = document.getElementById('file-input');
-        const preview = document.getElementById('preview');
-        const statusMessage = document.getElementById('status-message');
-        const uploadedLinksList = document.getElementById('uploaded-links').querySelector('ul');
-        let filesToUpload = [];
-
-        // --- Event Listeners ---
-
-        // 1. Drag and Drop
-        dropArea.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            dropArea.classList.add('drag-over');
-        });
-
-        dropArea.addEventListener('dragleave', () => {
-            dropArea.classList.remove('drag-over');
-        });
-
-        dropArea.addEventListener('drop', (e) => {
-            e.preventDefault();
-            dropArea.classList.remove('drag-over');
-            handleFiles(e.dataTransfer.files);
-        });
-
-        // 2. Klik pada drop-area untuk membuka dialog file
-        dropArea.addEventListener('click', () => {
-            fileInput.click();
-        });
-
-        // 3.  Perubahan pada input file
-        fileInput.addEventListener('change', () => {
-            handleFiles(fileInput.files);
-        });
-
-        // --- Fungsi Utama ---
-        function handleFiles(files) {
-            ([...files]).forEach(file => {
-                if(filesToUpload.find(f => f.name === file.name)) {
-                    statusMessage.textContent = `File "${file.name}" sudah ada dalam antrean.`;
-                    statusMessage.style.color = 'orange';
-                    return; // Skip file yang duplikat
-                }
-
-                filesToUpload.push(file);
-                addFileToPreview(file);
-            });
-
-            fileInput.value = null; // Reset input file
-             //uploadFiles(); // Panggil uploadFiles() di sini
-
-             if (filesToUpload.length > 0){
-                uploadFiles();
-             }
-        }
+      const form = document.getElementById('uploadForm');
+        const resultDiv = document.getElementById('result');
+        const fileUrlInput = document.getElementById('fileUrl');
+        const copyButton = document.getElementById('copyButton');
+        const messageP = document.getElementById('message');
 
 
-        function addFileToPreview(file) {
-            const previewItem = document.createElement('div');
-            previewItem.classList.add('preview-item');
+        form.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const formData = new FormData(form);
+              //Validasi Client side
+            if (!form.berkas.files.length) {
+                messageP.textContent = 'Pilih file terlebih dahulu.';
+                 resultDiv.style.display = 'block';
+                return;
+            }
 
-            const progressBarContainer = document.createElement('div');
-            progressBarContainer.classList.add('progress-bar-container');
-            const progressBar = document.createElement('div');
-            progressBar.classList.add('progress-bar');
-            progressBarContainer.appendChild(progressBar);
-            previewItem.appendChild(progressBarContainer);
-
-             // Tombol Hapus
-            const removeButton = document.createElement('button');
-            removeButton.classList.add('remove-button');
-            removeButton.innerHTML = '<i class="fas fa-times"></i>';
-            removeButton.addEventListener('click', (e) => {
-              e.stopPropagation(); // Penting agar klik pada tombol tidak memicu upload lagi.
-              removeFile(file, previewItem);
-            });
-            previewItem.appendChild(removeButton);
-
-
-            const reader = new FileReader();
-
-            reader.onload = (e) => {
-                let element;
-                if (file.type.startsWith('image/')) {
-                    element = document.createElement('img');
-                    element.src = e.target.result;
-                } else if (file.type.startsWith('video/')) {
-                    element = document.createElement('video');
-                    element.src = e.target.result;
-                    element.controls = true; // Tampilkan kontrol video
-                } else if (file.type.startsWith('audio/')) {
-                    element = document.createElement('audio');
-                    element.src = e.target.result;
-                    element.controls = true; // Tampilkan kontrol audio
-                } else {
-                    // Tipe file lain (tidak didukung)
-                    element = document.createElement('div');
-                    element.textContent = `[${file.type}] ${file.name}`;
-                }
-
-                const fileInfo = document.createElement('div');
-                fileInfo.classList.add('file-info');
-                fileInfo.textContent = `${file.name} (${formatBytes(file.size)})`;
-                previewItem.appendChild(fileInfo);
-
-                previewItem.appendChild(element);
-                preview.appendChild(previewItem);
-
-
-            };
-
-            reader.readAsDataURL(file);
-        }
-
-        function uploadFiles(){
-            statusMessage.textContent = 'Mengunggah...';
-            statusMessage.style.color = '#333';
-
-
-            filesToUpload.forEach((file, index) => {
-
-                const formData = new FormData();
-                formData.append('file', file);
-                const previewItem = preview.children[index]; // Dapatkan elemen preview yang sesuai
-                const progressBar = previewItem.querySelector('.progress-bar');
-
-                fetch('/uploads', {  // Ganti dengan URL endpoint Anda
+            try {
+                const response = await fetch('/uploads', {
                     method: 'POST',
-                    body: formData,
-                })
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! Status: ${response.status}`); // Tangani error HTTP
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    progressBar.style.width = '100%';
-                    statusMessage.textContent = 'Upload berhasil!';
-                    statusMessage.style.color = 'green';
-                    addUploadedLink(data.url, file.name);
-                    // Hapus dari antrean setelah berhasil diunggah
-                   removeFile(file, previewItem, false);
-
-                })
-                .catch(error => {
-                    console.error('Error saat upload:', error);
-                    progressBar.style.width = '100%';
-                    progressBar.style.backgroundColor = 'red'; // Tandai error
-                    statusMessage.textContent = `Error: ${error.message}`;
-                    statusMessage.style.color = 'red';
+                    body: formData
                 });
-            });
-             filesToUpload = []; // Bersihkan array setelah upload
-        }
+
+                const data = await response.json(); // Selalu parse sebagai JSON
+
+                 if (response.ok) {
+                     fileUrlInput.value = data.fileUrl; // Hanya URL yang ditampilkan
+                    resultDiv.style.display = 'block'; // Tampilkan div hasil
+                    copyButton.disabled = false;
+                 }else{
+                    messageP.textContent = data.message
+                    resultDiv.style.display = 'block';
+                    copyButton.disabled = true; //jangan bisa di copy
+                 }
 
 
-        function removeFile(file, previewItem, removeFromServer = true) {
-            // Hapus dari array filesToUpload
-             const index = filesToUpload.indexOf(file);
-
-            if (index > -1) {
-                filesToUpload.splice(index, 1);
-
+            } catch (error) {
+                messageP.textContent = 'Terjadi kesalahan: ' + error;
+                resultDiv.style.display = 'block';
+                 copyButton.disabled = true; //jangan bisa di copy
             }
+        });
 
-            // Hapus elemen preview dari DOM
-            previewItem.remove();
+        copyButton.addEventListener('click', () => {
+             fileUrlInput.select();
+              document.execCommand('copy');
+              messageP.textContent = 'URL berhasil disalin!';
 
-            // (Opsional) Kirim request ke server untuk menghapus file, jika perlu
-            if (removeFromServer) {
-              // Implementasikan logika untuk menghapus file dari server di sini, jika diperlukan.
-              // Misalnya, menggunakan fetch() dengan method DELETE.
-            }
-
-            if (filesToUpload.length === 0){
-                 statusMessage.textContent = '';
-            }
-        }
-
-
-        function addUploadedLink(url, fileName) {
-          const listItem = document.createElement('li');
-          const link = document.createElement('a');
-          link.href = url;
-          link.textContent = fileName;
-          link.target = "_blank"; // Buka di tab baru
-
-          const copyButton = document.createElement('button');
-            copyButton.innerHTML = '<i class="fas fa-copy"></i>';
-            copyButton.title = "Copy URL"; // Tooltip
-            copyButton.addEventListener('click', () => {
-                navigator.clipboard.writeText(url).then(() => {
-                    // (Opsional) Beri feedback visual bahwa URL sudah disalin
-                   copyButton.innerHTML = '<i class="fas fa-check"></i>'; // Ganti ikon
-                   setTimeout(()=> {copyButton.innerHTML = '<i class="fas fa-copy"></i>';}, 2000)
-
-                }).catch(err => {
-                    console.error('Gagal menyalin URL: ', err);
-                });
-            });
-
-            listItem.appendChild(link);
-            listItem.appendChild(copyButton);
-
-            uploadedLinksList.appendChild(listItem);
-        }
-
-        // Fungsi pembantu untuk memformat ukuran file
-        function formatBytes(bytes, decimals = 2) {
-            if (bytes === 0) return '0 Bytes';
-            const k = 1024;
-            const dm = decimals < 0 ? 0 : decimals;
-            const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
-            const i = Math.floor(Math.log(bytes) / Math.log(k));
-            return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
-        }
+                setTimeout(() => { // hilang kan pesan dalam 2 detik
+                    messageP.textContent = '';
+                }, 2000);
+        });
     </script>
 </body>
 </html>
