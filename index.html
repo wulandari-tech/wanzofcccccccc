@@ -13,6 +13,8 @@
         #fileUrl { width: 100%; padding: 8px; margin-bottom: 10px; box-sizing: border-box; }
         #copyButton { margin-top: 5px; }
         #message{margin-top: 1rem;}
+        /* Tambahan untuk preview */
+        #preview { margin-top: 20px; max-width: 100%;}
     </style>
 </head>
 <body>
@@ -28,6 +30,8 @@
             <input type="text" id="fileUrl" readonly>
             <button id="copyButton">Copy URL</button>
              <p id="message"></p>
+              <!-- Elemen untuk preview -->
+            <img id="preview" src="" alt="Preview">
         </div>
     </div>
 
@@ -37,6 +41,8 @@
         const fileUrlInput = document.getElementById('fileUrl');
         const copyButton = document.getElementById('copyButton');
         const messageP = document.getElementById('message');
+        const previewImg = document.getElementById('preview'); // Ambil elemen preview
+
 
 
         form.addEventListener('submit', async (event) => {
@@ -58,9 +64,19 @@
                 const data = await response.json(); // Selalu parse sebagai JSON
 
                  if (response.ok) {
-                     fileUrlInput.value = data.fileUrl; // Hanya URL yang ditampilkan
+                    fileUrlInput.value = data.fileUrl; // Hanya URL yang ditampilkan
                     resultDiv.style.display = 'block'; // Tampilkan div hasil
                     copyButton.disabled = false;
+
+                    // Tampilkan preview jika URL mengarah ke gambar
+                    previewImg.src = data.fileUrl;
+                    previewImg.onload = () => { // pastikan preview tampil setelah gambar di-load
+                        resultDiv.style.display = 'block';
+                    };
+					previewImg.onerror = () => { //jika error
+						previewImg.style.display = "none";
+					}
+
                  }else{
                     messageP.textContent = data.message
                     resultDiv.style.display = 'block';
